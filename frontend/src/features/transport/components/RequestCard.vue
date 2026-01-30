@@ -10,7 +10,12 @@
             <h3 class="request-title">{{ routeName }}</h3>
             <StatusBadge :status="request.status" />
           </div>
-          <p class="request-meta">{{ slotInfo }}</p>
+          <div v-if="request.selected_days && request.selected_days.length > 0" class="days-badges">
+             <span v-for="day in request.selected_days" :key="day" class="day-badge">
+               {{ capitalize(day).substring(0, 3) }}
+             </span>
+          </div>
+          <p v-else class="request-meta">{{ slotInfo }}</p>
         </div>
       </div>
     </div>
@@ -39,7 +44,7 @@
           <div class="info-icon"><Ticket class="w-4 h-4" /></div>
           <div class="info-content">
             <span class="info-label">Plan Type</span>
-            <span class="info-value">{{ formatPlanType(request.plan_type) }}</span>
+            <span class="info-value">{{ formatPlanType(request) }}</span>
           </div>
         </div>
       </div>
@@ -91,6 +96,10 @@ const routeName = computed(() => {
 });
 
 const slotInfo = computed(() => {
+  if (props.request.selected_days && props.request.selected_days.length > 0) {
+    return props.request.selected_days.map(d => capitalize(d)).join(', ');
+  }
+  // Fallback for legacy
   if (props.request.slot) {
     const dayName = DAY_NAMES[props.request.slot.day_of_week] || 'Day';
     return `${dayName}, ${props.request.slot.time}`;
@@ -98,12 +107,15 @@ const slotInfo = computed(() => {
   return props.request.slot_time || 'Unknown Time';
 });
 
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
 const amountPaid = computed(() => {
   return parseFloat(props.request.amount_paid || props.request.amount_expected || 0);
 });
 
-const formatPlanType = (type) => {
-  return type === 'monthly' ? 'Monthly Plan' : 'Term Plan';
+const formatPlanType = (request) => {
+  if (request.plan?.name_en) return request.plan.name_en;
+  return request.plan_type === 'monthly' ? 'Monthly Plan' : 'Term Plan';
 };
 
 const formatDate = (dateString) => {
@@ -277,6 +289,23 @@ const formatTime = (dateString) => {
   background: var(--color-warningBg);
   padding: 4px 10px;
   border-radius: var(--radius-full);
+}
+
+.days-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.day-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  background: var(--color-surfaceHighlight);
+  border: 1px solid var(--color-border);
+  color: var(--color-textMain);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
 }
 
 @media (max-width: 768px) {

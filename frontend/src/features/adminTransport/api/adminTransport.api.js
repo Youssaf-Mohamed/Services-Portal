@@ -17,6 +17,10 @@ export const adminTransportApi = {
       rejection_reason: reason
     });
   },
+  
+  // Payment Verification
+  verifyPayment: (id) => axios.post(`/api/admin/transport/requests/${id}/verify-payment`),
+  flagPayment: (id, reason) => axios.post(`/api/admin/transport/requests/${id}/flag-payment`, { reason }),
 
   /**
    * Bulk approve requests.
@@ -72,6 +76,10 @@ export const adminTransportApi = {
     const queryString = new URLSearchParams(params).toString();
     return `/api/admin/transport/manifest/export?${queryString}`;
   },
+  
+  // Reports
+  getActiveSubscriptionsReportUrl: () => '/api/admin/transport/reports/active-subscriptions',
+  getWaitlistReportUrl: () => '/api/admin/transport/reports/waitlist',
 
   // Settings
   getSettings: () => axios.get('/api/admin/transport/settings'),

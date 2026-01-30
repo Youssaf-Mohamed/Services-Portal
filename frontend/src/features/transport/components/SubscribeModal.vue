@@ -27,66 +27,85 @@
         <p><strong>One-way price:</strong> EGP {{ route.pricing?.price_one_way }}</p>
       </div>
 
-      <!-- Schedule Selection -->
+      <!-- Plan Selection -->
       <div class="form-section">
-        <h3>Select Day & Time</h3>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Day of Week</label>
-            <select v-model="selectedDay" class="form-control">
-              <option value="">Select day</option>
-              <option v-for="day in availableDays" :key="day.value" :value="day.value">
-                {{ day.label }}
-              </option>
-            </select>
+        <h3>Select Subscription Plan</h3>
+        <div v-if="loadingPlans" class="loading-inline">Loading plans...</div>
+          <!-- Monthly Plans -->
+          <div v-if="monthlyPlans.length > 0" class="plan-group">
+            <h4 class="plan-group-title">Monthly Plans</h4>
+            <div class="plan-list">
+              <label 
+                v-for="plan in monthlyPlans" 
+                :key="plan.id"
+                class="radio-option" 
+                :class="{ selected: selectedPlanId === plan.id }"
+              >
+                <input type="radio" :value="plan.id" v-model="selectedPlanId" />
+                <div class="plan-info">
+                  <span class="plan-name">{{ plan.name_en }}</span>
+                  <span class="plan-meta">{{ plan.allowed_days_per_week }} days/week</span>
+                  <span class="plan-discount" v-if="planDiscount(plan) > 0">{{ planDiscount(plan) }}% off</span>
+                </div>
+              </label>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Departure Time</label>
-            <select v-model="selectedTime" class="form-control" :disabled="!selectedDay">
-              <option value="">Select time</option>
-              <option v-for="slot in availableTimes" :key="slot.time" :value="slot.time">
-                {{ slot.time }} 
-                <span v-if="settings?.show_capacity !== false">({{ slot.seats_available > 0 ? `${slot.seats_available} seats` : 'Waitlist' }})</span>
-                <span v-else>({{ slot.seats_available > 0 ? 'Available' : 'Waitlist' }})</span>
-              </option>
-            </select>
-          </div>
-        </div>
 
-        <!-- Slot Capacity Indicator -->
-        <div v-if="selectedSlot" class="slot-capacity mt-2">
-           <div v-if="selectedSlot.seats_available > 0" class="capacity-badge available">
-              <span class="dot"></span>
-              {{ settings?.show_capacity !== false ? `${selectedSlot.seats_available} seats available` : 'Seats Available' }}
-           </div>
-           <div v-else class="capacity-badge waitlist">
-              <span class="dot red"></span>
-              Full - Waitlist Only
-           </div>
-        </div>
+          <!-- Term Plans -->
+          <div v-if="termPlans.length > 0" class="plan-group">
+            <h4 class="plan-group-title">Term Plans (3 Months)</h4>
+            <div class="plan-list">
+               <label 
+                v-for="plan in termPlans" 
+                :key="plan.id"
+                class="radio-option" 
+                :class="{ selected: selectedPlanId === plan.id }"
+              >
+                <input type="radio" :value="plan.id" v-model="selectedPlanId" />
+                <div class="plan-info">
+                  <span class="plan-name">{{ plan.name_en }}</span>
+                  <span class="plan-meta">{{ plan.allowed_days_per_week }} days/week</span>
+                  <span class="plan-discount" v-if="planDiscount(plan) > 0">{{ planDiscount(plan) }}% off</span>
+                </div>
+              </label>
+            </div>
+          </div>
       </div>
 
-      <!-- Subscription Plan Selection -->
-      <div class="form-section">
-        <h3>Subscription Plan</h3>
-        <div class="plan-options">
-          <label class="radio-option" :class="{ selected: selectedPlan === 'monthly' }">
-            <input type="radio" value="monthly" v-model="selectedPlan" />
-            <div class="plan-info">
-              <span class="plan-name">Monthly Plan</span>
-              <span class="plan-discount">{{ route.pricing?.monthly_discount_percent }}% off</span>
+      <!-- Days Selection -->
+      <div v-if="selectedPlan" class="form-section">
+        <DaysSelector
+          v-model="selectedDays"
+          :allowedDays="selectedPlan.allowed_days_per_week"
+          label="Select Your Transport Days"
+        />
+      </div>
+
+      <!-- Price Display -->
+      <div v-if="computedPrice" class="form-section">
+        <div class="price-display">
+          <div class="price-breakdown">
+            <div class="breakdown-row">
+              <span>Daily round-trip cost:</span>
+              <span>EGP {{ (route.pricing?.price_one_way * 2).toFixed(2) }}</span>
             </div>
-          </label>
-          <label class="radio-option" :class="{ selected: selectedPlan === 'term' }">
-            <input type="radio" value="term" v-model="selectedPlan" />
-            <div class="plan-info">
-              <span class="plan-name">Term Plan</span>
-              <span class="plan-discount">{{ route.pricing?.term_discount_percent }}% off</span>
+            <div class="breakdown-row">
+              <span>Selected days:</span>
+              <span>{{ selectedDays.length }} days/week</span>
             </div>
-          </label>
-        </div>
-        <div v-if="computedPrice" class="price-display">
-          <strong>Amount to pay:</strong> EGP {{ computedPrice }}
+            <div class="breakdown-row">
+              <span>Duration:</span>
+              <span>{{ selectedPlan.plan_type === 'monthly' ? `${settings?.weeks_in_month || 4} weeks` : `${settings?.weeks_in_term || 12} weeks (3 months)` }}</span>
+            </div>
+            <div class="breakdown-row">
+              <span>Discount:</span>
+              <span>{{ planDiscount(selectedPlan) }}%</span>
+            </div>
+            <div class="breakdown-row total">
+              <strong>Amount to pay:</strong>
+              <strong>EGP {{ computedPrice }}</strong>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -155,7 +174,7 @@
           @click="handleSubmit" 
           :disabled="!canSubmit || submitting"
         >
-          {{ submitting ? 'Submitting...' : (isWaitlist ? 'Join Waitlist' : 'Submit Request') }}
+          {{ submitting ? 'Submitting...' : 'Submit Request' }}
         </Button>
       </div>
     </div>
@@ -165,6 +184,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { Modal, Button } from '@/components/ui';
+import DaysSelector from './DaysSelector.vue';
 import { transportApi } from '../api/transport.api';
 import { useToast } from '@/composables/useToast';
 
@@ -183,13 +203,12 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'submitted']);
 
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 // State
-const isOpen = ref(true); // Modal visibility for v-model
-const selectedPlan = ref('monthly');
-const selectedDay = ref('');
-const selectedTime = ref('');
+const isOpen = ref(true);
+const plans = ref([]);
+const loadingPlans = ref(false);
+const selectedPlanId = ref(null);
+const selectedDays = ref([]);
 const selectedPaymentMethod = ref('');
 const paidFromNumber = ref('');
 const paidAt = ref('');
@@ -205,32 +224,23 @@ const validationErrors = ref(null);
 // Computed
 const todayDate = computed(() => new Date().toISOString().split('T')[0]);
 
-const availableDays = computed(() => {
-  if (!props.route.slots) return [];
-  return Object.keys(props.route.slots).map(dayNum => ({
-    value: parseInt(dayNum),
-    label: DAY_NAMES[dayNum] || `Day ${dayNum}`
-  }));
+const selectedPlan = computed(() => {
+  return plans.value.find(p => p.id === selectedPlanId.value);
 });
 
-const availableTimes = computed(() => {
-  if (!selectedDay.value || !props.route.slots) return [];
-  return props.route.slots[selectedDay.value] || [];
-});
+const monthlyPlans = computed(() => plans.value.filter(p => p.plan_type === 'monthly'));
+const termPlans = computed(() => plans.value.filter(p => p.plan_type === 'term'));
 
-const selectedSlot = computed(() => {
-    if (!selectedTime.value || !availableTimes.value) return null;
-    return availableTimes.value.find(slot => slot.time === selectedTime.value);
-});
-
-const isWaitlist = computed(() => {
-    return selectedSlot.value && selectedSlot.value.seats_available <= 0;
-});
+const planDiscount = (plan) => {
+  if (!plan || !props.route.pricing) return 0;
+  return plan.plan_type === 'monthly' 
+    ? props.route.pricing.monthly_discount_percent 
+    : props.route.pricing.term_discount_percent;
+};
 
 const canSubmit = computed(() => {
-  return selectedPlan.value && 
-         selectedDay.value !== '' && 
-         selectedTime.value && 
+  return selectedPlanId.value && 
+         selectedDays.value.length === selectedPlan.value?.allowed_days_per_week &&
          selectedPaymentMethod.value && 
          paidFromNumber.value.length >= 8 &&
          paidAt.value &&
@@ -242,31 +252,44 @@ const selectedPaymentMethodDetails = computed(() => {
 });
 
 const computedPrice = computed(() => {
-  if (!props.route.pricing || !props.settings) return null;
+  if (!selectedPlan.value || !props.route.pricing || !props.settings || selectedDays.value.length === 0) return null;
   
   const priceOneWay = props.route.pricing.price_one_way;
   const dailyRoundTrip = priceOneWay * 2;
-  const daysPerWeek = props.settings.days_per_week || 5;
+  const selectedDaysCount = selectedDays.value.length;
   
-  if (selectedPlan.value === 'monthly') {
+  if (selectedPlan.value.plan_type === 'monthly') {
     const weeksInMonth = props.settings.weeks_in_month || 4;
-    const baseTotal = dailyRoundTrip * daysPerWeek * weeksInMonth;
+    const baseTotal = dailyRoundTrip * selectedDaysCount * weeksInMonth;
     const discount = props.route.pricing.monthly_discount_percent || 0;
     return (baseTotal * (1 - discount / 100)).toFixed(2);
   } else {
     const weeksInTerm = props.settings.weeks_in_term || 12;
-    const baseTotal = dailyRoundTrip * daysPerWeek * weeksInTerm;
+    const baseTotal = dailyRoundTrip * selectedDaysCount * weeksInTerm;
     const discount = props.route.pricing.term_discount_percent || 0;
     return (baseTotal * (1 - discount / 100)).toFixed(2);
   }
 });
 
-// Watch for day change to reset time
-watch(selectedDay, () => {
-  selectedTime.value = '';
+// Watch for plan change to reset days
+watch(selectedPlanId, () => {
+  selectedDays.value = [];
 });
 
 // Methods
+const fetchPlans = async () => {
+  loadingPlans.value = true;
+  try {
+    const response = await transportApi.getPlans();
+    plans.value = response.data.plans || [];
+  } catch (error) {
+    console.error('Failed to load plans:', error);
+    errorMessage.value = 'Failed to load subscription plans. Please try again.';
+  } finally {
+    loadingPlans.value = false;
+  }
+};
+
 const fetchPaymentMethods = async () => {
   loadingPaymentMethods.value = true;
   try {
@@ -299,9 +322,14 @@ const handleSubmit = async () => {
     // Build FormData
     const formData = new FormData();
     formData.append('route_id', props.route.id);
-    formData.append('day_of_week', selectedDay.value);
-    formData.append('time', selectedTime.value);
-    formData.append('plan_type', selectedPlan.value);
+    formData.append('plan_id', selectedPlanId.value);
+    formData.append('plan_type', selectedPlan.value.plan_type);
+    
+    // Append selected days as JSON array
+    selectedDays.value.forEach((day) => {
+      formData.append('selected_days[]', day);
+    });
+    
     formData.append('payment_method_id', selectedPaymentMethod.value);
     formData.append('paid_from_number', paidFromNumber.value);
     formData.append('paid_at', paidAt.value);
@@ -319,21 +347,12 @@ const handleSubmit = async () => {
     console.error('Submission error:', error);
     
     if (error.status === 409) {
-      // Use Toast for conflict error as requested
       const msg = error.message || 'You already have a pending or active subscription.';
       toast.error(msg, 6000);
-      handleClose(); // Optional: close modal since they can't subscribe? 
-      // User didn't say to close, but if they already have one, they can't proceed. 
-      // But maybe they want to see the error and then close.
-      // Let's just show toast and keep modal open or close it? 
-      // If I close it, they see the toast on the main page.
-      // "You already have..." implies looking at the list.
-      // Let's close the modal so they are back on the grid and see the toast.
       handleClose();
     } else if (error.status === 422) {
       errorMessage.value = error.message || 'Validation failed. Please check your inputs.';
       validationErrors.value = error.errors;
-      // Also show a toast for better visibility
       toast.error('Please check the form for errors.');
     } else {
       toast.error(error.message || 'Failed to submit request. Please try again.');
@@ -352,8 +371,8 @@ const handleClose = () => {
 
 // Lifecycle
 onMounted(() => {
+  fetchPlans();
   fetchPaymentMethods();
-  // Set default date to today
   paidAt.value = todayDate.value;
 });
 </script>
@@ -462,6 +481,29 @@ onMounted(() => {
   gap: var(--spacing-md);
 }
 
+.plan-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.plan-group:last-child {
+  margin-bottom: 0;
+}
+
+.plan-group-title {
+  font-size: var(--font-sm);
+  font-weight: var(--fw-bold);
+  color: var(--color-textMuted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.plan-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-sm);
+}
+
 .radio-option {
   display: flex;
   align-items: center;
@@ -486,11 +528,17 @@ onMounted(() => {
 .plan-info {
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-xs);
 }
 
 .plan-name {
   font-weight: var(--fw-medium);
   color: var(--color-textMain);
+}
+
+.plan-meta {
+  font-size: var(--font-sm);
+  color: var(--color-textMuted);
 }
 
 .plan-discount {
@@ -500,15 +548,31 @@ onMounted(() => {
 }
 
 .price-display {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-lg);
   background: var(--color-surfaceHighlight);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+.price-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-sm);
+  color: var(--color-textMain);
+}
+
+.breakdown-row.total {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--color-border);
+  font-size: var(--font-lg);
   color: var(--color-textStrong);
-  font-size: var(--font-xl);
-  text-align: center;
-  font-weight: var(--fw-bold);
 }
 
 .loading-inline {
@@ -562,40 +626,4 @@ onMounted(() => {
   border-top: 1px solid var(--color-borderLight);
   margin-top: var(--spacing-md);
 }
-
-.capacity-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: var(--radius-full);
-    font-size: 13px;
-    font-weight: 600;
-    margin-top: 8px;
-}
-
-.capacity-badge.available {
-    background: var(--color-successBg);
-    color: var(--color-success);
-}
-
-.capacity-badge.waitlist {
-    background: var(--color-warningBg);
-    color: var(--color-warningText);
-    background: #FFF7ED;
-    color: #C2410C;
-    border: 1px solid #FED7AA;
-}
-
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-.dot.red {
-    background: #C2410C;
-}
 </style>
-

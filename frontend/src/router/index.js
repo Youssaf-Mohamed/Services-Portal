@@ -82,6 +82,18 @@ const routes = [
     meta: { requiresAuth: true, requiresRole: 'admin' },
   },
   {
+    path: '/admin/transport/reports',
+    name: 'AdminTransportReports',
+    component: () => import('@/features/adminTransport/pages/Reports.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin' },
+  },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('@/features/notifications/pages/NotificationsPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/',
     redirect: '/login',
   },

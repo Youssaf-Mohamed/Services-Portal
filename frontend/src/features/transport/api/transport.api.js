@@ -54,10 +54,23 @@ export const transportApi = {
   },
 
   /**
+   * Get active transport plans.
+   */
+  async getPlans() {
+    try {
+      const response = await axios.get('/api/transport/plans');
+      return response.data;
+    } catch (error) {
+      console.error('transportApi.getPlans error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to load plans');
+    }
+  },
+
+  /**
    * Submit subscription request with FormData.
    * @param {FormData} formData - FormData containing:
-   *   route_id, day_of_week, time, plan_type, payment_method_id,
-   *   paid_from_number, paid_at, amount_paid, proof (file)
+   *   route_id, day_of_week, time, plan_type, plan_id, selected_days,
+   *   payment_method_id, paid_from_number, paid_at, amount_paid, proof (file)
    * @returns {Promise<object>} API response with created request data
    */
   async submitSubscriptionRequest(formData) {

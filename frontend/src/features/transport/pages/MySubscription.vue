@@ -49,18 +49,23 @@
                  <h2 class="route-name">{{ routeName }}</h2>
                  <div class="slot-info">
                    <Clock class="w-4 h-4 text-muted" />
-                   <span>{{ slotInfo }}</span>
+                   <div v-if="subscription.selected_days && subscription.selected_days.length > 0" class="days-badges">
+                     <span v-for="day in subscription.selected_days" :key="day" class="day-badge">
+                       {{ capitalize(day).substring(0, 3) }}
+                     </span>
+                   </div>
+                   <span v-else>{{ selectedDaysDisplay }}</span>
                  </div>
               </div>
 
               <div class="meta-grid">
                 <div class="meta-item">
-                   <span class="meta-label">Plan Type</span>
-                   <span class="meta-value">{{ formatPlanType(subscription.plan_type) }}</span>
+                   <span class="meta-label">Plan</span>
+                   <span class="meta-value">{{ planName }}</span>
                 </div>
                 <div class="meta-item">
                    <span class="meta-label">Valid Until</span>
-                   <span class="meta-value">{{ formatDate(subscription.end_date) }}</span>
+                   <span class="meta-value">{{ formatDate(subscription.ends_at || subscription.end_date) }}</span>
                 </div>
                  <div class="meta-item">
                    <span class="meta-label">Subscription ID</span>
@@ -82,7 +87,7 @@
               <AlertTriangle class="w-4 h-4" />
               Your subscription expires in {{ daysRemaining }} days
             </div>
-            <Button size="sm" variant="outline-warning">Renew Now</Button>
+            <Button size="sm" variant="outline-warning" @click="handleRenew">Renew Now</Button>
         </div>
       </Card>
     </div>
@@ -91,16 +96,22 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import PortalLayout from '@/layouts/PortalLayout.vue';
 import { PageHeader, EmptyState, Card, Badge, Button, SkeletonLoader } from '@/components/ui';
 import { transportApi } from '../api/transport.api';
 import VerifiedSeal from '../components/VerifiedSeal.vue';
 import { Clock, AlertTriangle } from 'lucide-vue-next';
 
+const router = useRouter();
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const loading = ref(false);
 const subscription = ref(null);
+
+const handleRenew = () => {
+  router.push('/student/transport');
+};
 
 const fetchSubscription = async () => {
   loading.value = true;
@@ -120,13 +131,26 @@ const routeName = computed(() => {
   return subscription.value?.route?.name_en || subscription.value?.route_name || 'Unknown Route';
 });
 
-const slotInfo = computed(() => {
+const planName = computed(() => {
+  return subscription.value?.plan?.name_en || 
+         (subscription.value?.plan_type === 'monthly' ? 'Monthly Plan' : 'Term Plan');
+});
+
+const selectedDaysDisplay = computed(() => {
+  if (subscription.value?.selected_days && subscription.value.selected_days.length > 0) {
+    return subscription.value.selected_days
+      .map(day => capitalize(day))
+      .join(', ');
+  }
+  // Fallback for legacy
   if (subscription.value?.slot) {
     const dayName = DAY_NAMES[subscription.value.slot.day_of_week] || 'Day';
     return `${dayName}, ${subscription.value.slot.time}`;
   }
-  return subscription.value?.slot_time || 'Unknown Time';
+  return 'No days selected';
 });
+
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const daysRemaining = computed(() => {
   // Use API-computed days_remaining if available
@@ -134,10 +158,11 @@ const daysRemaining = computed(() => {
     return subscription.value.days_remaining;
   }
   // Fallback to local calculation
-  if (!subscription.value?.end_date) return 0;
-  const endDate = new Date(subscription.value.end_date);
+  if (!subscription.value?.end_date && !subscription.value?.ends_at) return 0;
+  
+  const end = new Date(subscription.value.end_date || subscription.value.ends_at);
   const today = new Date();
-  const diff = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+  const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
   return Math.max(0, diff);
 });
 
@@ -255,6 +280,23 @@ onMounted(() => {
     font-size: 14px;
     color: var(--color-textMain);
     margin-top: 4px;
+}
+
+.days-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.day-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    background: var(--color-surfaceHighlight);
+    border: 1px solid var(--color-border);
+    color: var(--color-textMain);
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
 }
 
 .meta-grid {

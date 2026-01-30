@@ -45,11 +45,19 @@
 
           <!-- Actions for pending requests -->
           <div v-if="request.status === 'pending'" class="actions-section">
-            <Button variant="primary" @click="showApproveModal = true">
-              ✓ Approve
+            <div v-if="request.payment_status !== 'verified'" class="payment-warning">
+              <AlertTriangle class="warning-icon" />
+              <span>Payment must be verified before approval</span>
+            </div>
+            <Button 
+              variant="primary" 
+              @click="showApproveModal = true"
+              :disabled="request.payment_status !== 'verified'"
+            >
+              <Check class="btn-icon" /> Approve
             </Button>
             <Button variant="danger" @click="showRejectModal = true">
-              ✕ Reject
+              <X class="btn-icon" /> Reject
             </Button>
           </div>
 
@@ -78,6 +86,79 @@
             <p>End: {{ request.subscription.end_date }}</p>
             <p v-if="request.subscription.days_remaining !== null">
               Days remaining: {{ request.subscription.days_remaining }}
+            </p>
+          </div>
+        </Card>
+
+        <!-- Payment Review Card (for pending requests) -->
+        <Card v-if="request.status === 'pending'" class="payment-review-card">
+          <template #header>
+            <div class="card-header-row">
+              <h3>Payment Review</h3>
+              <Badge :variant="getPaymentStatusVariant(request.payment_status)">
+                {{ formatPaymentStatus(request.payment_status) }}
+              </Badge>
+            </div>
+          </template>
+
+          <!-- Payment Status Description -->
+          <div v-if="request.payment_status === 'pending_verification'" class="status-info pending-info">
+            <Clock class="status-icon" />
+            <p>Payment proof submitted. Please review and verify.</p>
+          </div>
+          <div v-else-if="request.payment_status === 'verified'" class="status-info success-info">
+            <CheckCircle class="status-icon" />
+            <p>Payment verified. Ready for approval.</p>
+          </div>
+          <div v-else-if="request.payment_status === 'flagged'" class="status-info danger-info">
+            <AlertCircle class="status-icon" />
+            <div class="flag-details">
+              <p><strong>Payment flagged for review</strong></p>
+              <p v-if="request.payment_flag_reason" class="flag-reason">
+                Reason: {{ request.payment_flag_reason }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Proof Preview -->
+          <div v-if="request.proof_exists" class="proof-preview-section">
+            <h4>Payment Proof</h4>
+            <div v-if="proofLoading" class="proof-loading">Loading proof...</div>
+            <div v-else-if="proofImageUrl" class="proof-image-container">
+              <img :src="proofImageUrl" alt="Payment proof" class="proof-image" @click="openProofInNewTab" />
+              <p class="proof-hint">Click to view full size</p>
+            </div>
+            <div v-else class="proof-fallback">
+              <a :href="proofUrl" target="_blank" class="proof-link">
+                <FileText class="link-icon" /> Download Proof File
+              </a>
+            </div>
+          </div>
+
+          <!-- Verification Actions -->
+          <div v-if="request.payment_status !== 'verified'" class="payment-actions">
+            <Button 
+              variant="primary" 
+              @click="handleVerifyPayment"
+              :disabled="verifying"
+            >
+              <CheckCircle class="btn-icon" />
+              {{ verifying ? 'Verifying...' : 'Verify Payment' }}
+            </Button>
+            <Button 
+              variant="warning" 
+              @click="showFlagModal = true"
+              :disabled="verifying"
+            >
+              <Flag class="btn-icon" />
+              Flag Payment
+            </Button>
+          </div>
+
+          <!-- Verification Info -->
+          <div v-if="request.payment_verified_at" class="verification-info">
+            <p>
+              Verified on {{ formatDate(request.payment_verified_at) }}
             </p>
           </div>
         </Card>
@@ -232,6 +313,37 @@
         </Button>
       </template>
     </Modal>
+
+    <!-- Flag Payment Modal -->
+    <Modal v-model="showFlagModal" title="Flag Payment">
+      <div class="modal-body">
+        <p>Flag this payment proof for review. Please provide a reason:</p>
+        
+        <div class="form-group">
+          <label>Reason for Flagging *</label>
+          <textarea 
+            v-model="flagForm.reason" 
+            rows="4"
+            placeholder="e.g., Proof image is unclear, Amount doesn't match, etc."
+          ></textarea>
+          <p class="char-count">{{ flagForm.reason.length }}/500</p>
+        </div>
+
+        <div v-if="flagging" class="processing">
+          <div class="spinner-small"></div>
+          Processing...
+        </div>
+        <div v-if="flagError" class="error-text">{{ flagError }}</div>
+      </div>
+      <template #footer>
+        <Button variant="secondary" @click="showFlagModal = false" :disabled="flagging">
+          Cancel
+        </Button>
+        <Button variant="warning" @click="handleFlagPayment" :disabled="flagging || flagForm.reason.length < 5">
+          Flag Payment
+        </Button>
+      </template>
+    </Modal>
   </PortalLayout>
 </template>
 
@@ -247,6 +359,10 @@ import Modal from '@/components/ui/Modal.vue';
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue';
 import { adminTransportApi } from '../api/adminTransport.api';
 import { useToast } from '@/composables/useToast';
+import { 
+  Check, X, AlertTriangle, Clock, CheckCircle, 
+  AlertCircle, FileText, Flag 
+} from 'lucide-vue-next';
 
 const toast = useToast();
 
@@ -260,13 +376,18 @@ const request = ref(null);
 
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
+const showFlagModal = ref(false);
 const approving = ref(false);
 const rejecting = ref(false);
+const verifying = ref(false);
+const flagging = ref(false);
 const approveError = ref(null);
 const rejectError = ref(null);
+const flagError = ref(null);
 
 const approveForm = reactive({ start_date: '' });
 const rejectForm = reactive({ rejection_reason: '' });
+const flagForm = reactive({ reason: '' });
 
 const proofLoading = ref(false);
 const proofImageUrl = ref(null);
@@ -349,12 +470,65 @@ const handleReject = async () => {
   }
 };
 
+const handleVerifyPayment = async () => {
+  try {
+    verifying.value = true;
+    const response = await adminTransportApi.verifyPayment(requestId.value);
+    if (response.data.success) {
+      toast.success('Payment verified successfully');
+      await fetchRequest();
+    }
+  } catch (err) {
+    console.error('Verification error:', err);
+    toast.error(err.response?.data?.message || 'Failed to verify payment');
+  } finally {
+    verifying.value = false;
+  }
+};
+
+const handleFlagPayment = async () => {
+  try {
+    flagging.value = true;
+    flagError.value = null;
+    const response = await adminTransportApi.flagPayment(requestId.value, flagForm.reason);
+    if (response.data.success) {
+      showFlagModal.value = false;
+      flagForm.reason = '';
+      toast.warning('Payment flagged for review');
+      await fetchRequest();
+    }
+  } catch (err) {
+    console.error('Flag error:', err);
+    flagError.value = err.response?.data?.message || 'Failed to flag payment';
+  } finally {
+    flagging.value = false;
+  }
+};
+
 const getStatusVariant = (status) => {
   switch (status) {
     case 'pending': return 'warning';
     case 'approved': return 'success';
     case 'rejected': return 'danger';
     default: return 'secondary';
+  }
+};
+
+const getPaymentStatusVariant = (status) => {
+  switch (status) {
+    case 'pending_verification': return 'warning';
+    case 'verified': return 'success';
+    case 'flagged': return 'danger';
+    default: return 'secondary';
+  }
+};
+
+const formatPaymentStatus = (status) => {
+  switch (status) {
+    case 'pending_verification': return 'Pending Verification';
+    case 'verified': return 'Verified';
+    case 'flagged': return 'Flagged';
+    default: return status || 'Unknown';
   }
 };
 
@@ -693,6 +867,130 @@ watch(() => request.value?.proof_exists, (hasProof) => {
   .loading-grid, .skeleton-wide {
     grid-template-columns: 1fr;
     grid-column: span 1;
+  }
+}
+
+/* Payment Review Card Styles */
+.payment-review-card {
+  grid-column: span 2;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.status-info {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.status-info .status-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.pending-info {
+  background: var(--color-warningLight, #fef3c7);
+  color: var(--color-warningDark, #92400e);
+}
+
+.success-info {
+  background: var(--color-successLight, #d1fae5);
+  color: var(--color-successDark, #065f46);
+}
+
+.danger-info {
+  background: var(--color-dangerLight, #fee2e2);
+  color: var(--color-dangerDark, #991b1b);
+}
+
+.flag-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.flag-reason {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.proof-preview-section {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.proof-preview-section h4 {
+  margin-bottom: var(--spacing-md);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.proof-fallback {
+  padding: var(--spacing-md);
+  background: var(--color-bgSurface);
+  border-radius: var(--radius-md);
+}
+
+.link-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.payment-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-md);
+}
+
+.verification-info {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  font-size: 14px;
+  color: var(--color-textMuted);
+}
+
+.payment-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-warningLight, #fef3c7);
+  color: var(--color-warningDark, #92400e);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  width: 100%;
+  margin-bottom: var(--spacing-md);
+}
+
+.payment-warning .warning-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+@media (max-width: 768px) {
+  .payment-review-card {
+    grid-column: span 1;
+  }
+  
+  .payment-actions {
+    flex-direction: column;
   }
 }
 </style>

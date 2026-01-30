@@ -11,6 +11,7 @@
         </div>
       </div>
       <div class="header-right">
+        <NotificationBell />
         <div class="user-avatar">
           <span>{{ userInitials }}</span>
         </div>
@@ -86,6 +87,10 @@
             <Users class="nav-icon" />
             <span class="nav-label">Manifest</span>
           </router-link>
+          <router-link to="/admin/transport/reports" class="nav-item" @click="closeSidebarOnMobile">
+            <FileSpreadsheet class="nav-icon" />
+            <span class="nav-label">Reports</span>
+          </router-link>
           <router-link to="/admin/transport/settings" class="nav-item" @click="closeSidebarOnMobile">
             <Settings class="nav-icon" />
             <span class="nav-label">Settings</span>
@@ -118,6 +123,7 @@
 import { ref, computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
+import NotificationBell from '@/features/notifications/components/NotificationBell.vue';
 import { 
   Home, 
   Bus, 
@@ -132,7 +138,8 @@ import {
   Users, 
   Settings, 
   LogOut,
-  Menu
+  Menu,
+  FileSpreadsheet
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -240,6 +247,7 @@ const handleLogout = async () => {
 .header-right {
   display: flex;
   align-items: center;
+  gap: var(--spacing-lg);
 }
 
 .user-avatar {
