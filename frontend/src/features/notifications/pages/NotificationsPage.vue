@@ -196,140 +196,150 @@ onMounted(() => {
 
 <style scoped>
 .notifications-page {
-  max-width: 800px;
+  max-width: 1000px; /* Increased from 800px */
   margin: 0 auto;
+  padding-bottom: var(--spacing-2xl);
 }
 
 .notifications-list {
-  background: white;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
 .notification-item {
   display: flex;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
-  border-bottom: 1px solid var(--color-border);
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.notification-item:last-child {
-  border-bottom: none;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .notification-item:hover {
-  background-color: var(--color-bgHover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primaryLight);
 }
 
 .notification-item.unread {
-  background-color: var(--color-bgSurface);
+  background-color: #f8fafc; /* Very subtle blue-gray for unread */
+  border-left: 4px solid var(--color-primary);
 }
 
 .notification-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px; /* Softer square look */
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
+/* Professional Color Palette */
 .icon-success {
-  background-color: var(--color-successLight);
-  color: var(--color-success);
+  background-color: #ecfdf5; /* Emerald 50 */
+  color: #10b981; /* Emerald 500 */
 }
 
 .icon-danger {
-  background-color: var(--color-dangerLight);
-  color: var(--color-danger);
+  background-color: #fef2f2; /* Red 50 */
+  color: #ef4444; /* Red 500 */
 }
 
 .icon-warning {
-  background-color: var(--color-warningLight);
-  color: var(--color-warning);
+  background-color: #fff7ed; /* Orange 50 - Cleaner than brown */
+  color: #f97316; /* Orange 500 */
 }
 
 .icon-info {
-  background-color: var(--color-primaryLight);
-  color: var(--color-primary);
+  background-color: #eff6ff; /* Blue 50 */
+  color: #3b82f6; /* Blue 500 */
 }
 
 .notification-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .notification-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: var(--spacing-xs);
 }
 
 .title {
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 700;
+  font-size: 16px;
   color: var(--color-textMain);
 }
 
 .time {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-textMuted);
   white-space: nowrap;
-  margin-left: var(--spacing-sm);
+  background: var(--color-background);
+  padding: 2px 8px;
+  border-radius: 12px;
 }
 
 .message {
   font-size: 14px;
   color: var(--color-textMuted);
-  line-height: 1.4;
+  line-height: 1.5;
+  max-width: 90%;
 }
 
 .unread-dot {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background-color: var(--color-primary);
-  margin-top: 6px;
 }
 
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
+  padding: 80px 20px;
   background: white;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
+  border: 1px dashed var(--color-border);
 }
 
 .empty-icon {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   color: var(--color-textMuted);
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  opacity: 0.5;
 }
 
 .empty-state h3 {
-  font-size: 18px;
+  font-size: 20px;
   margin-bottom: var(--spacing-sm);
   color: var(--color-textMain);
-}
-
-.empty-state p {
-  color: var(--color-textMuted);
+  font-weight: 600;
 }
 
 .loading-state {
   display: flex;
   justify-content: center;
-  padding: 40px;
+  padding: 60px;
 }
 
 .spinner {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: 3px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
@@ -337,15 +347,14 @@ onMounted(() => {
 }
 
 .load-more {
-  padding: var(--spacing-md);
+  margin-top: var(--spacing-xl);
   text-align: center;
-  border-top: 1px solid var(--color-border);
 }
 
 .btn-icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 6px;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
 }
 
 @keyframes spin {

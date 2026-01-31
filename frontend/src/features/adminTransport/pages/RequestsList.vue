@@ -61,133 +61,69 @@
         </div>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="table-container">
-      <div style="padding: 24px;">
-        <div style="margin-bottom: 20px; display: flex; gap: 20px;">
-          <SkeletonLoader height="32px" width="100px" />
-          <SkeletonLoader height="32px" width="100px" />
-          <SkeletonLoader height="32px" width="200px" />
+    <!-- Data Table -->
+    <DataTable
+      :columns="columns"
+      :data="requests"
+      :loading="loading"
+      :error="error"
+      :pagination="pagination"
+      selectable
+      :selected-ids="selectedIds"
+      @update:selectedIds="selectedIds = $event"
+      @page-change="goToPage"
+      @retry="fetchRequests"
+      :disable-row-selection="(row) => row.status !== 'pending'"
+    >
+      <!-- Custom Slot: Student Info -->
+      <template #cell-user="{ row }">
+        <div class="student-info">
+          <span class="student-name">{{ row.user.name }}</span>
+          <span class="student-email">{{ row.user.email }}</span>
         </div>
-        <div v-for="i in 5" :key="i" style="margin-bottom: 12px;">
-           <SkeletonLoader height="48px" width="100%" />
-        </div>
-      </div>
-    </div>
+      </template>
 
-    <!-- Error State -->
-    <div v-else-if="error" class="error-state">
-      <p>{{ error }}</p>
-      <Button variant="primary" @click="fetchRequests">Retry</Button>
-    </div>
+      <!-- Custom Slot: Route -->
+      <template #cell-route="{ value }">
+        {{ value?.name_en || 'N/A' }}
+      </template>
 
-    <!-- Empty State -->
-    <EmptyState
-      v-else-if="requests.length === 0"
-      icon="📋"
-      title="No Requests Found"
-      message="There are no subscription requests matching your filters."
-    />
+      <!-- Custom Slot: Status -->
+      <template #cell-status="{ value }">
+        <StatusBadge :status="value" />
+      </template>
+      
+      <!-- Custom Slot: Plan Type with regular Badge -->
+      <template #cell-plan_type="{ value }">
+         <Badge :variant="value === 'monthly' ? 'info' : 'secondary'">
+            {{ value }}
+         </Badge>
+      </template>
 
-    <!-- Requests Table -->
-    <div v-else class="table-container">
-      <table class="requests-table">
-        <thead>
-          <tr>
-            <th style="width: 40px">
-                <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
-            </th>
-            <th>ID</th>
-            <th>Student</th>
-            <th>Route</th>
-            <th>Plan</th>
-            <th>Status</th>
-            <th>Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="req in requests" :key="req.id">
-            <td>
-                <input 
-                    type="checkbox" 
-                    v-model="selectedIds" 
-                    :value="req.id" 
-                    v-if="req.status === 'pending'"
-                />
-            </td>
-            <td>#{{ req.id }}</td>
-            <td>
-              <div class="student-info">
-                <span class="student-name">{{ req.user.name }}</span>
-                <span class="student-email">{{ req.user.email }}</span>
-              </div>
-            </td>
-            <td>{{ req.route?.name_en || 'N/A' }}</td>
-            <td>
-              <Badge :variant="req.plan_type === 'monthly' ? 'info' : 'secondary'">
-                {{ req.plan_type }}
-              </Badge>
-            </td>
-            <td>
-              <Badge :variant="getStatusVariant(req.status)">
-                {{ req.status }}
-              </Badge>
-            </td>
-            <td>{{ formatDate(req.created_at) }}</td>
-            <td>
-              <router-link 
-                :to="`/admin/transport/requests/${req.id}`"
-                class="action-link"
-              >
-                View Details
-              </router-link>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Pagination -->
-      <div v-if="pagination.last_page > 1" class="pagination">
-        <Button 
-          variant="secondary" 
-          size="sm" 
-          :disabled="pagination.current_page === 1"
-          @click="goToPage(pagination.current_page - 1)"
+       <!-- Custom Slot: Actions -->
+      <template #cell-actions="{ row }">
+        <router-link 
+          :to="`/admin/transport/requests/${row.id}`"
+          class="action-link"
         >
-          Previous
-        </Button>
-        <span class="page-info">
-          Page {{ pagination.current_page }} of {{ pagination.last_page }}
-        </span>
-        <Button 
-          variant="secondary" 
-          size="sm" 
-          :disabled="pagination.current_page === pagination.last_page"
-          @click="goToPage(pagination.current_page + 1)"
-        >
-          Next
-        </Button>
-      </div>
-    </div>
+          View Details
+        </router-link>
+      </template>
+    </DataTable>
+
   </PortalLayout>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PortalLayout from '@/layouts/PortalLayout.vue';
-import PageHeader from '@/components/ui/PageHeader.vue';
-import Button from '@/components/ui/Button.vue';
-import Badge from '@/components/ui/Badge.vue';
-import EmptyState from '@/components/ui/EmptyState.vue';
-import SkeletonLoader from '@/components/ui/SkeletonLoader.vue';
+import { PageHeader, Button, Badge, DataTable, StatusBadge } from '@/components/ui';
 import { adminTransportApi } from '../api/adminTransport.api';
+import { useToast } from '@/composables/useToast';
 
 const route = useRoute();
 const router = useRouter();
-import { useToast } from '@/composables/useToast';
-
 const toast = useToast();
 
 const loading = ref(true);
@@ -200,25 +136,18 @@ const selectedIds = ref([]);
 const pagination = reactive({
   current_page: 1,
   last_page: 1,
-  per_page: 15,
   total: 0,
 });
 
-const isAllSelected = computed(() => {
-    return requests.value.length > 0 && selectedIds.value.length === requests.value.filter(r => r.status === 'pending').length;
-});
-
-const hasSelection = computed(() => selectedIds.value.length > 0);
-
-const toggleSelectAll = () => {
-    if (isAllSelected.value) {
-        selectedIds.value = [];
-    } else {
-        selectedIds.value = requests.value
-            .filter(r => r.status === 'pending')
-            .map(r => r.id);
-    }
-};
+const columns = [
+  { key: 'id', label: 'ID', width: '60px' },
+  { key: 'user', label: 'Student' },
+  { key: 'route', label: 'Route' },
+  { key: 'plan_type', label: 'Plan' },
+  { key: 'status', label: 'Status' },
+  { key: 'created_at', label: 'Date', format: 'date' },
+  { key: 'actions', label: 'Actions', align: 'right' }
+];
 
 const handleBulkApprove = async () => {
     if (!confirm(`Approve ${selectedIds.value.length} requests?`)) return;
@@ -277,8 +206,6 @@ const debouncedSearch = debounce(() => {
     filters.page = 1; // Reset to first page
     fetchRequests();
 }, 400);
-
-import { watch } from 'vue';
 
 watch(() => filters.search, (newVal) => {
     debouncedSearch();
@@ -347,23 +274,6 @@ const goToPage = (page) => {
   fetchRequests();
 };
 
-const getStatusVariant = (status) => {
-  switch (status) {
-    case 'pending': return 'warning';
-    case 'approved': return 'success';
-    case 'rejected': return 'danger';
-    default: return 'secondary';
-  }
-};
-
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
 onMounted(() => {
   initFiltersFromQuery();
   fetchRoutes();
@@ -417,67 +327,6 @@ onMounted(() => {
   box-shadow: var(--shadow-focusRing);
 }
 
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-3xl);
-  color: var(--color-textMuted);
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: var(--spacing-md);
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.error-state {
-  text-align: center;
-  padding: var(--spacing-3xl);
-  color: var(--color-danger);
-}
-
-.table-container {
-  background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border);
-  overflow: hidden;
-}
-
-.requests-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.requests-table th,
-.requests-table td {
-  padding: var(--spacing-md) var(--spacing-lg);
-  text-align: left;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.requests-table th {
-  background: var(--color-surfaceHighlight);
-  font-size: var(--font-xs);
-  font-weight: var(--fw-bold);
-  color: var(--color-textMuted);
-  text-transform: uppercase;
-}
-
-.requests-table tbody tr:hover {
-  background: var(--color-surfaceHighlight);
-}
-
 .student-info {
   display: flex;
   flex-direction: column;
@@ -505,20 +354,6 @@ onMounted(() => {
   text-decoration: underline;
 }
 
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
-  border-top: 1px solid var(--color-border);
-}
-
-.page-info {
-  font-size: 14px;
-  color: var(--color-textMuted);
-}
-
 @media (max-width: 768px) {
   .filters-row {
     flex-direction: column;
@@ -528,15 +363,6 @@ onMounted(() => {
   .filter-group select,
   .filter-group input {
     width: 100%;
-  }
-
-  .requests-table {
-    font-size: 14px;
-  }
-
-  .requests-table th,
-  .requests-table td {
-    padding: var(--spacing-sm) var(--spacing-md);
   }
 }
 

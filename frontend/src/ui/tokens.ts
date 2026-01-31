@@ -9,7 +9,7 @@ export const tokens = {
         // Primary Brand (University Teal)
         primary: '#1f4e5f',
         primaryDark: '#163a4a', // Darker shade for hover/active
-        primaryLight: '#2c6b80', // Lighter shade for accents
+        primaryLight: '#e6f2f4', // Very light shade for backgrounds
 
         // Secondary (Academic Blue)
         secondary: '#1f6fff',
@@ -36,9 +36,9 @@ export const tokens = {
         successBg: '#d1e7dd',   // Tinted bg
         successText: '#0f5132', // Dark text
 
-        warning: '#b58105',     // Academic Amber
-        warningBg: '#fff3cd',
-        warningText: '#664d03',
+        warning: '#d97706',     // Amber 600 (clean orange)
+        warningBg: '#fffbeb',   // Amber 50 (light cream)
+        warningText: '#92400e', // Amber 800 (dark for contrast)
 
         danger: '#bb2d3b',      // Official Red
         dangerBg: '#f8d7da',

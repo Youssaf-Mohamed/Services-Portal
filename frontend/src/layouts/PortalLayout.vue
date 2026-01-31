@@ -28,26 +28,50 @@
             <Home class="nav-icon" />
             <span class="nav-label">Home</span>
           </router-link>
-          <router-link to="/student/transport" class="nav-item" @click="closeSidebarOnMobile">
-            <Bus class="nav-icon" />
-            <span class="nav-label">Transportation</span>
-          </router-link>
-          <router-link to="/student/transport/my-requests" class="nav-item" @click="closeSidebarOnMobile">
-            <ClipboardList class="nav-icon" />
-            <span class="nav-label">My Requests</span>
-          </router-link>
-          <router-link to="/student/transport/my-subscription" class="nav-item" @click="closeSidebarOnMobile">
-            <Ticket class="nav-icon" />
-            <span class="nav-label">My Subscription</span>
-          </router-link>
-        </div>
+          
+          <!-- Student Transportation Group -->
+          <div class="nav-group">
+            <div class="nav-group-header" @click="toggleGroup('studentTransport')">
+              <Bus class="nav-icon" />
+              <span class="nav-label">Transportation</span>
+              <ChevronDown v-if="expandedGroups.studentTransport" class="group-arrow" />
+              <ChevronRight v-else class="group-arrow" />
+            </div>
+            <div v-show="expandedGroups.studentTransport" class="nav-group-children">
+              <router-link to="/student/transport" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <span class="nav-label">Dashboard</span>
+              </router-link>
+              <router-link to="/student/transport/my-requests" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <span class="nav-label">My Requests</span>
+              </router-link>
+              <router-link to="/student/transport/my-subscription" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <span class="nav-label">My Subscription</span>
+              </router-link>
+            </div>
+          </div>
 
-        <!-- SERVICES Section (Student) -->
-        <div v-if="isStudent" class="nav-section">
-          <div class="nav-section-title">SERVICES</div>
-          <router-link to="/student/transport" class="nav-item" @click="closeSidebarOnMobile">
-            <Bus class="nav-icon" />
-            <span class="nav-label">Transportation System</span>
+          <!-- Student ID Card Services Group -->
+          <div class="nav-group">
+            <div class="nav-group-header" @click="toggleGroup('studentIdCard')">
+              <CreditCard class="nav-icon" />
+              <span class="nav-label">ID Card Services</span>
+              <ChevronDown v-if="expandedGroups.studentIdCard" class="group-arrow" />
+              <ChevronRight v-else class="group-arrow" />
+            </div>
+            <div v-show="expandedGroups.studentIdCard" class="nav-group-children">
+              <router-link to="/student/id-card" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <span class="nav-label">Services</span>
+              </router-link>
+              <router-link to="/student/id-card/my-requests" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <span class="nav-label">My Requests</span>
+              </router-link>
+            </div>
+          </div>
+
+          <!-- Unified My Requests -->
+          <router-link to="/student/my-requests" class="nav-item" @click="closeSidebarOnMobile">
+            <ClipboardList class="nav-icon" />
+            <span class="nav-label">All My Requests</span>
           </router-link>
         </div>
 
@@ -58,47 +82,78 @@
             <LayoutDashboard class="nav-icon" />
             <span class="nav-label">Dashboard</span>
           </router-link>
-        </div>
 
-        <!-- TRANSPORT MANAGEMENT Section (Admin) -->
-        <div v-if="isAdmin" class="nav-section">
-          <div class="nav-section-title">TRANSPORT MANAGEMENT</div>
-          <router-link to="/admin/transport" class="nav-item" @click="closeSidebarOnMobile">
-            <BarChart3 class="nav-icon" />
-            <span class="nav-label">Overview</span>
-          </router-link>
-          <router-link to="/admin/transport/requests" class="nav-item" @click="closeSidebarOnMobile">
-            <FileText class="nav-icon" />
-            <span class="nav-label">Requests</span>
-          </router-link>
-          <router-link to="/admin/transport/routes" class="nav-item" @click="closeSidebarOnMobile">
-            <Map class="nav-icon" />
-            <span class="nav-label">Routes</span>
-          </router-link>
-          <router-link to="/admin/transport/slots" class="nav-item" @click="closeSidebarOnMobile">
-            <Calendar class="nav-icon" />
-            <span class="nav-label">Slots</span>
-          </router-link>
-          <router-link to="/admin/transport/stops" class="nav-item" @click="closeSidebarOnMobile">
-            <MapPin class="nav-icon" />
-            <span class="nav-label">Stops</span>
-          </router-link>
-          <router-link to="/admin/transport/manifest" class="nav-item" @click="closeSidebarOnMobile">
-            <Users class="nav-icon" />
-            <span class="nav-label">Manifest</span>
-          </router-link>
-          <router-link to="/admin/transport/reports" class="nav-item" @click="closeSidebarOnMobile">
-            <FileSpreadsheet class="nav-icon" />
-            <span class="nav-label">Reports</span>
-          </router-link>
-          <router-link to="/admin/transport/settings" class="nav-item" @click="closeSidebarOnMobile">
-            <Settings class="nav-icon" />
-            <span class="nav-label">Settings</span>
-          </router-link>
+          <!-- Admin Transport Management Group -->
+          <div class="nav-group">
+            <div class="nav-group-header" @click="toggleGroup('adminTransport')">
+              <Bus class="nav-icon" />
+              <span class="nav-label">TRANSPORT MANAGEMENT</span>
+              <ChevronDown v-if="expandedGroups.adminTransport" class="group-arrow" />
+              <ChevronRight v-else class="group-arrow" />
+            </div>
+            <div v-show="expandedGroups.adminTransport" class="nav-group-children">
+               <router-link to="/admin/transport" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <BarChart3 class="nav-icon small-icon" />
+                <span class="nav-label">Overview</span>
+              </router-link>
+              <router-link to="/admin/transport/requests" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <FileText class="nav-icon small-icon" />
+                <span class="nav-label">Requests</span>
+              </router-link>
+              <router-link to="/admin/transport/routes" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <Map class="nav-icon small-icon" />
+                <span class="nav-label">Routes</span>
+              </router-link>
+              <router-link to="/admin/transport/slots" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <Calendar class="nav-icon small-icon" />
+                <span class="nav-label">Slots</span>
+              </router-link>
+              <router-link to="/admin/transport/stops" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <MapPin class="nav-icon small-icon" />
+                <span class="nav-label">Stops</span>
+              </router-link>
+              <router-link to="/admin/transport/manifest" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <Users class="nav-icon small-icon" />
+                <span class="nav-label">Manifest</span>
+              </router-link>
+              <router-link to="/admin/transport/reports" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <FileSpreadsheet class="nav-icon small-icon" />
+                <span class="nav-label">Reports</span>
+              </router-link>
+              <router-link to="/admin/transport/settings" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <Settings class="nav-icon small-icon" />
+                <span class="nav-label">Settings</span>
+              </router-link>
+            </div>
+          </div>
+
+          <!-- Admin ID Card Management Group -->
+          <div class="nav-group">
+            <div class="nav-group-header" @click="toggleGroup('adminIdCard')">
+              <CreditCard class="nav-icon" />
+              <span class="nav-label">ID CARD MANAGEMENT</span>
+              <ChevronDown v-if="expandedGroups.adminIdCard" class="group-arrow" />
+              <ChevronRight v-else class="group-arrow" />
+            </div>
+            <div v-show="expandedGroups.adminIdCard" class="nav-group-children">
+              <router-link to="/admin/id-card" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <BarChart3 class="nav-icon small-icon" />
+                <span class="nav-label">Dashboard</span>
+              </router-link>
+              <router-link to="/admin/id-card/requests" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <FileText class="nav-icon small-icon" />
+                <span class="nav-label">Requests</span>
+              </router-link>
+              <router-link to="/admin/id-card/settings" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <Settings class="nav-icon small-icon" />
+                <span class="nav-label">Settings</span>
+              </router-link>
+            </div>
+          </div>
         </div>
 
         <!-- Logout -->
-        <div class="nav-section">
+        <div class="nav-section mt-auto">
           <a href="#" @click.prevent="handleLogout" class="nav-item logout-item">
             <LogOut class="nav-icon" />
             <span class="nav-label">Logout</span>
@@ -120,7 +175,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, reactive } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
 import NotificationBell from '@/features/notifications/components/NotificationBell.vue';
@@ -139,12 +194,27 @@ import {
   Settings, 
   LogOut,
   Menu,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ChevronDown,
+  ChevronRight,
+  CreditCard
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
 const router = useRouter();
 const sidebarOpen = ref(false);
+
+// State for collapsible groups
+const expandedGroups = reactive({
+  studentTransport: true, // Default open for better discovery
+  studentIdCard: true,
+  adminTransport: true,
+  adminIdCard: true
+});
+
+const toggleGroup = (group) => {
+  expandedGroups[group] = !expandedGroups[group];
+};
 
 const userInitials = computed(() => {
   if (!authStore.user?.name) return 'U';
@@ -186,13 +256,14 @@ const handleLogout = async () => {
   right: 0;
   height: 64px;
   background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  /* Removed simple border for a more elevated look, or kept it very subtle */
+  border-bottom: 1px solid transparent; 
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--spacing-xl);
   z-index: 1000;
-  box-shadow: var(--shadow-sm); /* Subtle visual separation */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Professional elevation */
 }
 
 .header-left {
@@ -284,14 +355,23 @@ const handleLogout = async () => {
   overflow-y: auto;
   z-index: 900;
   transition: transform var(--transition-normal);
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-nav {
   padding: var(--spacing-xl) 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .nav-section {
   margin-bottom: var(--spacing-xl);
+}
+
+.mt-auto {
+  margin-top: auto;
 }
 
 .nav-section-title {
@@ -308,10 +388,10 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: 10px var(--spacing-lg);
+  padding: 12px var(--spacing-lg);
   color: var(--color-textMain);
   text-decoration: none;
-  transition: all var(--transition-fast);
+  transition: background-color 0.2s ease, color 0.2s ease;
   border-left: 3px solid transparent;
   cursor: pointer;
   font-size: 14px;
@@ -319,7 +399,7 @@ const handleLogout = async () => {
 }
 
 .nav-item:hover {
-  background: var(--color-sidebarHover);
+  background-color: var(--color-surfaceHighlight);
   color: var(--color-primary);
 }
 
@@ -329,18 +409,22 @@ const handleLogout = async () => {
 }
 
 .nav-item.router-link-active {
-  background: var(--color-activeBg); 
+  background-color: var(--color-surfaceHighlight);
   border-left-color: var(--color-primary);
   color: var(--color-primary);
   font-weight: var(--fw-bold);
 }
 
 .nav-icon {
-  font-size: 18px;
-  width: 24px;
-  text-align: center;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
-  opacity: 0.8;
+  opacity: 0.7;
+}
+
+.small-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .router-link-active .nav-icon {
@@ -349,11 +433,57 @@ const handleLogout = async () => {
 
 .nav-label {
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Collapsible Groups */
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 12px var(--spacing-lg);
+  color: var(--color-textMain);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: var(--fw-semibold); /* Slightly bolder than items */
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.nav-group-header:hover {
+  background-color: var(--color-surfaceHighlight);
+  color: var(--color-primary);
+}
+
+.group-arrow {
+  width: 16px;
+  height: 16px;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+
+.nav-group-children {
+  background-color: transparent; /* No distinct background, keeping it clean */
+}
+
+.child-item {
+  padding-left: calc(var(--spacing-lg) + 28px); /* Indent children */
+  font-size: 13.5px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.child-item:hover {
+   background-color: var(--color-surfaceHighlight); 
 }
 
 .logout-item {
   color: var(--color-danger);
   margin-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-lg);
 }
 
 .logout-item:hover {
@@ -367,12 +497,12 @@ const handleLogout = async () => {
   margin-left: 260px;
   min-height: calc(100vh - 64px);
   background: var(--color-background);
-  padding: var(--spacing-2xl);
+  padding: var(--spacing-lg); /* Reduced to lg for tighter fit */
   transition: margin-left var(--transition-normal);
 }
 
 .content-container {
-  max-width: 1200px; /* Reduced max-width for better reading measure */
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -414,7 +544,7 @@ const handleLogout = async () => {
   .portal-sidebar {
     transform: translateX(-100%);
     box-shadow: none;
-    top: 64px; /* Ensure it stays below header */
+    top: 64px;
   }
 
   .portal-sidebar.sidebar-open {

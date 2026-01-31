@@ -138,33 +138,34 @@ const formatTime = (dateString) => {
 .request-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Softer initial shadow */
   border: 1px solid var(--color-border);
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .request-card:hover {
+  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   border-color: var(--color-primaryLight);
 }
 
 .card-header {
   padding: var(--spacing-lg) var(--spacing-xl);
-  border-bottom: 1px solid var(--color-surfaceHighlight);
-  background: linear-gradient(to bottom, var(--color-surface), var(--color-background));
+  border-bottom: 1px solid var(--color-border);
+  background: white; /* Clean white background */
 }
 
 .header-main {
   display: flex;
   gap: var(--spacing-lg);
-  align-items: center;
+  align-items: flex-start; /* Align to top */
 }
 
 .icon-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px; /* Soft square */
   background: var(--color-primaryLight);
   color: var(--color-primary);
   display: flex;
@@ -177,38 +178,38 @@ const formatTime = (dateString) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .header-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .request-title {
-  font-size: 16px;
+  font-size: 18px; /* Larger title */
   font-weight: 700;
-  color: var(--color-textStrong);
-  margin: 0;
-  font-family: var(--font-heading, sans-serif);
+  color: var(--color-textMain);
+  margin: 0 0 4px 0;
+  line-height: 1.2;
 }
 
 .request-meta {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-textMuted);
   margin: 0;
-  font-weight: 500;
 }
 
 .card-body {
   padding: var(--spacing-xl);
+  background: #fcfcfc; /* Very subtle contrast for body */
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-lg);
+  gap: var(--spacing-xl); /* Increased gap */
 }
 
 .info-item {
@@ -218,7 +219,7 @@ const formatTime = (dateString) => {
 }
 
 .info-icon {
-  color: var(--color-textMuted);
+  color: var(--color-textLight);
   padding-top: 2px;
 }
 
@@ -232,19 +233,20 @@ const formatTime = (dateString) => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--color-textMuted);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   font-weight: 600;
 }
 
 .info-value {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--color-textMain);
 }
 
 .info-sub {
-  font-size: 11px;
-  color: var(--color-textLight);
+  font-size: 12px;
+  color: var(--color-textMuted);
+  margin-top: 2px;
 }
 
 .rejection-notice {
@@ -261,20 +263,21 @@ const formatTime = (dateString) => {
   align-items: center;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-xs);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .rejection-notice p {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   padding-left: 24px;
   color: #B91C1C;
+  line-height: 1.5;
 }
 
 .card-actions {
   margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
-  border-top: 1px dashed var(--color-borderLight);
+  padding-top: var(--spacing-lg);
+  border-top: 1px dashed var(--color-border);
   display: flex;
   justify-content: flex-end;
 }
@@ -282,36 +285,38 @@ const formatTime = (dateString) => {
 .pending-note {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--color-warningText);
+  gap: 8px;
+  font-size: 13px;
+  color: #0369a1; /* Sky 700 */
   font-weight: 500;
-  background: var(--color-warningBg);
-  padding: 4px 10px;
+  background: #f0f9ff; /* Sky 50 */
+  padding: 6px 12px;
   border-radius: var(--radius-full);
+  border: 1px solid #bae6fd; /* Sky 200 */
 }
 
 .days-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .day-badge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 6px;
-  background: var(--color-surfaceHighlight);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  background: white;
   border: 1px solid var(--color-border);
   color: var(--color-textMain);
-  border-radius: var(--radius-sm);
-  text-transform: uppercase;
+  border-radius: var(--radius-full);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 @media (max-width: 768px) {
   .info-grid {
     grid-template-columns: 1fr;
-    gap: var(--spacing-md);
+    gap: var(--spacing-lg);
   }
   
   .header-row {

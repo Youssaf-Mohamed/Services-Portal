@@ -1,11 +1,13 @@
 <template>
   <span class="status-badge" :class="`status-${status}`">
-    <span class="status-icon">{{ getStatusIcon(status) }}</span>
+    <component :is="getStatusIcon(status)" class="status-icon" />
     {{ formatStatus(status) }}
   </span>
 </template>
 
 <script setup>
+import { Clock, CheckCircle, XCircle, AlertTriangle, Ban } from 'lucide-vue-next';
+
 defineProps({
   status: {
     type: String,
@@ -29,15 +31,15 @@ const formatStatus = (status) => {
 
 const getStatusIcon = (status) => {
   const iconMap = {
-    pending: '⏳',
-    approved: '✓',
-    rejected: '✕',
-    active: '✓',
-    waitlisted: '⏳',
-    expired: '⊘',
-    cancelled: '✕'
+    pending: Clock,
+    approved: CheckCircle,
+    rejected: XCircle,
+    active: CheckCircle,
+    waitlisted: AlertTriangle,
+    expired: Ban,
+    cancelled: XCircle
   };
-  return iconMap[status] || '';
+  return iconMap[status] || Clock;
 };
 </script>
 
@@ -45,7 +47,7 @@ const getStatusIcon = (status) => {
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: 6px;
   padding: 6px 12px;
   border-radius: var(--radius-full);
   font-size: 12px;
@@ -54,41 +56,49 @@ const getStatusIcon = (status) => {
 }
 
 .status-icon {
-  font-size: 10px;
+  width: 14px;
+  height: 14px;
 }
 
+/* Pending - Blue/Info style */
 .status-pending {
-  background: var(--color-neutral);
-  color: var(--color-textMuted);
+  background: #eff6ff; /* Blue 50 */
+  color: #1d4ed8; /* Blue 700 */
 }
 
+/* Approved - Green */
 .status-approved {
-  background: var(--color-successLight);
-  color: var(--color-successDark);
+  background: #ecfdf5; /* Emerald 50 */
+  color: #059669; /* Emerald 600 */
 }
 
+/* Rejected - Red */
 .status-rejected {
-  background: var(--color-dangerLight);
-  color: var(--color-dangerDark);
+  background: #fef2f2; /* Red 50 */
+  color: #dc2626; /* Red 600 */
 }
 
+/* Active - Green */
 .status-active {
-  background: var(--color-successLight);
-  color: var(--color-successDark);
+  background: #ecfdf5;
+  color: #059669;
 }
 
+/* Waitlisted - Amber/Orange */
 .status-waitlisted {
-  background: var(--color-warningLight);
-  color: var(--color-warningDark);
+  background: #fffbeb; /* Amber 50 */
+  color: #d97706; /* Amber 600 */
 }
 
+/* Expired - Gray */
 .status-expired {
-  background: var(--color-neutralDark);
-  color: var(--color-textMuted);
+  background: #f3f4f6; /* Gray 100 */
+  color: #6b7280; /* Gray 500 */
 }
 
+/* Cancelled - Red */
 .status-cancelled {
-  background: var(--color-dangerLight);
-  color: var(--color-dangerDark);
+  background: #fef2f2;
+  color: #dc2626;
 }
 </style>

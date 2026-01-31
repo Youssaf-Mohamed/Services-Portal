@@ -2,66 +2,138 @@
   <div class="admin-page">
     <div class="header">
       <h1>Admin Dashboard</h1>
-      <button @click="handleLogout" class="logout-btn">Logout</button>
+      <button @click="handleLogout" class="logout-btn">
+        <LogOut class="btn-icon" /> Logout
+      </button>
     </div>
 
     <div class="content">
       <div class="user-info">
         <h2>Welcome, {{ authStore.user?.name }}!</h2>
-        <div class="info-row">
-          <span class="label">Email:</span>
-          <span class="value">{{ authStore.user?.email }}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Role:</span>
-          <span class="value role-badge">{{ authStore.user?.role }}</span>
+        <div class="info-grid">
+          <div class="info-item">
+            <Mail class="info-icon" />
+            <span class="value">{{ authStore.user?.email }}</span>
+          </div>
+          <div class="info-item">
+            <Shield class="info-icon" />
+            <span class="value role-badge">{{ authStore.user?.role }}</span>
+          </div>
         </div>
       </div>
 
       <!-- Transport Management Section -->
-      <div class="transport-section">
-        <h3>Transport Management</h3>
-        <div class="transport-links">
-          <router-link to="/admin/transport" class="transport-card">
-            <span class="card-icon">📊</span>
-            <span class="card-title">Dashboard</span>
-            <span class="card-desc">View KPIs & overview</span>
+      <div class="section-container">
+        <div class="section-header">
+          <Bus class="section-icon" />
+          <h3>Transport Management</h3>
+        </div>
+        <div class="dashboard-grid">
+          <router-link to="/admin/transport" class="dashboard-card">
+            <div class="card-icon-wrapper primary">
+              <BarChart3 class="card-icon" />
+            </div>
+            <div class="card-content">
+              <span class="card-title">Overview</span>
+              <span class="card-desc">View KPIs & statistics</span>
+            </div>
           </router-link>
-          <router-link to="/admin/transport/requests" class="transport-card">
-            <span class="card-icon">📝</span>
-            <span class="card-title">Requests</span>
-            <span class="card-desc">Review & moderate</span>
+
+          <router-link to="/admin/transport/requests" class="dashboard-card">
+            <div class="card-icon-wrapper warning">
+              <FileText class="card-icon" />
+            </div>
+            <div class="card-content">
+              <span class="card-title">Requests</span>
+              <span class="card-desc">Review & moderate</span>
+            </div>
           </router-link>
-          <router-link to="/admin/transport/routes" class="transport-card">
-            <span class="card-icon">🗺️</span>
-            <span class="card-title">Routes</span>
-            <span class="card-desc">Manage bus routes</span>
+
+          <router-link to="/admin/transport/routes" class="dashboard-card">
+            <div class="card-icon-wrapper info">
+              <Map class="card-icon" />
+            </div>
+            <div class="card-content">
+              <span class="card-title">Routes</span>
+              <span class="card-desc">Manage bus lines</span>
+            </div>
           </router-link>
-          <router-link to="/admin/transport/slots" class="transport-card">
-            <span class="card-icon">📅</span>
-            <span class="card-title">Slots</span>
-            <span class="card-desc">Schedule & capacity</span>
+
+          <router-link to="/admin/transport/slots" class="dashboard-card">
+            <div class="card-icon-wrapper success">
+              <Calendar class="card-icon" />
+            </div>
+            <div class="card-content">
+              <span class="card-title">Slots</span>
+              <span class="card-desc">Schedule & capacity</span>
+            </div>
           </router-link>
-          <router-link to="/admin/transport/manifest" class="transport-card">
-            <span class="card-icon">👥</span>
-            <span class="card-title">Manifest</span>
-            <span class="card-desc">Passenger lists</span>
+
+          <router-link to="/admin/transport/manifest" class="dashboard-card">
+            <div class="card-icon-wrapper purple">
+              <Users class="card-icon" />
+            </div>
+            <div class="card-content">
+              <span class="card-title">Manifest</span>
+              <span class="card-desc">Passenger lists</span>
+            </div>
+          </router-link>
+        </div>
+      </div>
+      
+      <!-- ID Card Management Section -->
+      <div class="section-container">
+        <div class="section-header">
+          <CreditCard class="section-icon" />
+          <h3>ID Card Services</h3>
+        </div>
+        <div class="dashboard-grid">
+          <router-link to="/admin/id-card" class="dashboard-card">
+            <div class="card-icon-wrapper primary">
+              <LayoutDashboard class="card-icon" />
+            </div>
+            <div class="card-content">
+              <span class="card-title">Overview</span>
+              <span class="card-desc">Service stats & KPIs</span>
+            </div>
+          </router-link>
+
+          <router-link to="/admin/id-card/requests" class="dashboard-card">
+            <div class="card-icon-wrapper warning">
+              <ClipboardList class="card-icon" />
+            </div>
+            <div class="card-content">
+              <span class="card-title">Requests</span>
+              <span class="card-desc">Process applications</span>
+            </div>
+          </router-link>
+
+          <router-link to="/admin/id-card/settings" class="dashboard-card">
+            <div class="card-icon-wrapper secondary">
+              <Settings class="card-icon" />
+            </div>
+            <div class="card-content">
+              <span class="card-title">Settings</span>
+              <span class="card-desc">Configure services</span>
+            </div>
           </router-link>
         </div>
       </div>
 
+      <!-- Testing Tools (Collapsed or moved to bottom) -->
       <div class="test-api">
-        <h3>API Tests</h3>
+        <h3>System Diagnostics</h3>
         <div class="button-group">
-          <button @click="testAdminPing" :disabled="testing">
-            {{ testing ? 'Testing...' : 'Test Admin API' }}
+          <button @click="testAdminPing" :disabled="testing" class="btn btn-outline">
+            <Activity class="btn-icon" />
+            {{ testing ? '...' : 'Ping API' }}
           </button>
-          <button @click="testStorageCheck" :disabled="testing">
-            {{ testing ? 'Testing...' : 'Test Storage Check' }}
+          <button @click="testStorageCheck" :disabled="testing" class="btn btn-outline">
+            <HardDrive class="btn-icon" />
+            {{ testing ? '...' : 'Check Storage' }}
           </button>
         </div>
         <div v-if="apiResult" class="api-result">
-          <h4>Response:</h4>
           <pre>{{ apiResult }}</pre>
         </div>
       </div>
@@ -74,6 +146,12 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import axios from '../../utils/axios';
+import { 
+  LogOut, Mail, Shield, Bus, CreditCard, 
+  BarChart3, FileText, Map, Calendar, Users,
+  LayoutDashboard, ClipboardList, Settings,
+  Activity, HardDrive
+} from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -114,196 +192,242 @@ const testStorageCheck = async () => {
 .admin-page {
   min-height: 100vh;
   background: var(--color-background);
-  padding: 2rem;
+  padding: var(--spacing-xl);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  margin-bottom: var(--spacing-xl);
 }
 
 h1 {
-  color: white;
+  color: var(--color-primary);
   margin: 0;
-  font-size: 2rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: var(--font-2xl);
+  font-weight: var(--fw-bold);
 }
 
 .logout-btn {
-  padding: 0.625rem 1.5rem;
-  background: white;
-  color: #f5576c;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-surface);
+  color: var(--color-danger);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-weight: var(--fw-medium);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-normal);
 }
 
 .logout-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--color-dangerBg);
+  border-color: var(--color-danger);
+}
+
+.btn-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .content {
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
 }
 
 .user-info {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .user-info h2 {
-  color: #2d3748;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
+  color: var(--color-textMain);
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-xl);
 }
 
-.info-row {
+.info-grid {
   display: flex;
-  margin: 0.75rem 0;
+  gap: var(--spacing-2xl);
+  flex-wrap: wrap;
+}
+
+.info-item {
+  display: flex;
   align-items: center;
+  gap: var(--spacing-md);
+  color: var(--color-textSecondary);
 }
 
-.label {
-  font-weight: 600;
-  color: #4a5568;
-  min-width: 80px;
-}
-
-.value {
-  color: #2d3748;
+.info-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
 }
 
 .role-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: var(--color-danger);
-  color: white;
-  border-radius: var(--radius-xl);
-  font-size: 0.875rem;
-  font-weight: 600;
+  padding: 2px 10px;
+  background: var(--color-primaryBg);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+}
+
+/* Sections */
+.section-container {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--color-primary);
+}
+
+.section-header h3 {
+  margin: 0;
+  color: var(--color-textMain);
+  font-size: var(--font-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.dashboard-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: all var(--transition-normal);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.card-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Icon Colors */
+.card-icon-wrapper.primary { background: var(--color-primaryBg); color: var(--color-primary); }
+.card-icon-wrapper.warning { background: var(--color-warningBg); color: var(--color-warningText); }
+.card-icon-wrapper.info { background: var(--color-infoBg); color: var(--color-infoText); }
+.card-icon-wrapper.success { background: var(--color-successBg); color: var(--color-successText); }
+.card-icon-wrapper.secondary { background: var(--color-neturalBg); color: var(--color-neutralText); }
+.card-icon-wrapper.purple { background: #f3e8ff; color: #9333ea; }
+
+.card-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title {
+  font-weight: var(--fw-semibold);
+  color: var(--color-textMain);
+  font-size: var(--font-base);
+}
+
+.card-desc {
+  font-size: var(--font-xs);
+  color: var(--color-textMuted);
+  margin-top: 2px;
+}
+
+/* Test API Section */
+.test-api {
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
 }
 
 .test-api h3 {
-  margin-bottom: 1rem;
-  color: #2d3748;
-  font-size: 1.25rem;
+  color: var(--color-textSecondary);
+  font-size: var(--font-base);
+  margin-bottom: var(--spacing-md);
 }
 
 .button-group {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
+  gap: var(--spacing-md);
 }
 
-.test-api button {
-  padding: 0.625rem 1.25rem;
-  background: var(--color-danger);
-  color: white;
-  border: none;
+.btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: var(--fw-medium);
   cursor: pointer;
-  font-weight: 600;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
 }
 
-.test-api button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-textSecondary);
 }
 
-.test-api button:disabled {
-  opacity: 0.6;
+.btn-outline:hover:not(:disabled) {
+  background: var(--color-surfaceHighlight);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
 .api-result {
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  background: #f7fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.api-result h4 {
-  margin: 0 0 0.75rem 0;
-  color: #4a5568;
-  font-size: 0.95rem;
-}
-
-.api-result pre {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #2d3748;
-  overflow-x: auto;
-  font-family: 'Courier New', monospace;
-}
-
-/* Transport Management Section */
-.transport-section {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.transport-section h3 {
-  margin-bottom: 1rem;
-  color: #2d3748;
-  font-size: 1.25rem;
-}
-
-.transport-links {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 1rem;
-}
-
-.transport-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1.25rem 1rem;
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.transport-card:hover {
-  border-color: var(--color-primary);
-  background: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.card-icon {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-.card-title {
-  font-weight: 600;
-  color: #2d3748;
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
-}
-
-.card-desc {
-  font-size: 0.75rem;
-  color: #718096;
-  text-align: center;
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-family: monospace;
+  font-size: var(--font-xs);
+  color: var(--color-textMuted);
+  max-height: 200px;
+  overflow-y: auto;
 }
 </style>

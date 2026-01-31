@@ -93,6 +93,58 @@ const routes = [
     component: () => import('@/features/notifications/pages/NotificationsPage.vue'),
     meta: { requiresAuth: true },
   },
+  // Unified My Requests (all modules)
+  {
+    path: '/student/my-requests',
+    name: 'UnifiedMyRequests',
+    component: () => import('../features/myRequests/pages/UnifiedRequests.vue'),
+    meta: { requiresAuth: true, requiresRole: 'student' },
+  },
+  // ID Card Student Routes
+  {
+    path: '/student/id-card',
+    name: 'StudentIdCard',
+    component: () => import('../features/idCard/pages/IdCardHome.vue'),
+    meta: { requiresAuth: true, requiresRole: 'student' },
+  },
+  // NOTE: NewIdCardRequest route removed - now using modal-based submission
+  // {
+  //   path: '/student/id-card/request/:typeCode',
+  //   name: 'NewIdCardRequest',
+  //   component: () => import('../features/idCard/pages/NewIdCardRequest.vue'),
+  //   meta: { requiresAuth: true, requiresRole: 'student' },
+  // },
+  {
+    path: '/student/id-card/my-requests',
+    name: 'StudentIdCardRequests',
+    component: () => import('../features/idCard/pages/MyIdCardRequests.vue'),
+    meta: { requiresAuth: true, requiresRole: 'student' },
+  },
+  // Admin ID Card Routes
+  {
+    path: '/admin/id-card',
+    name: 'AdminIdCardDashboard',
+    component: () => import('../features/adminIdCard/pages/Dashboard.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin' },
+  },
+  {
+    path: '/admin/id-card/requests',
+    name: 'AdminIdCardRequests',
+    component: () => import('../features/adminIdCard/pages/RequestsList.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin' },
+  },
+  {
+    path: '/admin/id-card/requests/:id',
+    name: 'AdminIdCardRequestDetails',
+    component: () => import('../features/adminIdCard/pages/RequestDetails.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin' },
+  },
+  {
+    path: '/admin/id-card/settings',
+    name: 'AdminIdCardSettings',
+    component: () => import('../features/adminIdCard/pages/Settings.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin' },
+  },
   {
     path: '/',
     redirect: '/login',

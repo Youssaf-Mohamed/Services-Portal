@@ -68,7 +68,9 @@ defineProps({
 }
 
 .breadcrumb-separator {
-  color: var(--color-border);
+  color: var(--color-textMuted); /* Was --color-border, increased contrast */
+  font-weight: bold;
+  opacity: 0.7;
 }
 
 .page-title {

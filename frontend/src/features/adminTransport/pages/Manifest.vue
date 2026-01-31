@@ -62,7 +62,7 @@
             <RefreshCw class="btn-icon" />
             Refresh
           </Button>
-          <Button variant="secondary" @click="exportExcel" :disabled="subscriptions.length === 0">
+          <Button variant="success" @click="exportExcel" :disabled="subscriptions.length === 0">
             <Download class="btn-icon" />
             Export Excel
           </Button>

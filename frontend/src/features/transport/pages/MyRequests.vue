@@ -10,42 +10,36 @@
       ]"
     />
 
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-list">
-      <div v-for="i in 3" :key="i" class="skeleton-request">
-        <div style="display: flex; justify-content: space-between;">
-          <SkeletonLoader height="24px" width="150px" />
-          <SkeletonLoader height="24px" width="80px" border-radius="var(--radius-full)" />
-        </div>
-        <SkeletonLoader height="20px" width="40%" />
-      </div>
-    </div>
+    <DataList
+      :data="requests"
+      :loading="loading"
+      empty-title="No Requests Yet"
+      empty-message="You haven't submitted any transportation requests yet."
+      empty-action-text="Browse Routes"
+      empty-action-to="/student/transport"
+    >
+      <template #default="{ item }">
+        <RequestCard :request="item" />
+      </template>
 
-    <!-- Empty State -->
-    <EmptyState
-      v-else-if="requests.length === 0"
-      icon="📋"
-      title="No Requests Yet"
-      message="You haven't submitted any transportation requests yet."
-      actionText="Browse Routes"
-      actionTo="/student/transport"
-    />
-
-    <!-- Requests Timeline -->
-    <div v-else class="requests-timeline">
-      <RequestCard
-        v-for="request in requests"
-        :key="request.id"
-        :request="request"
-      />
-    </div>
+      <!-- Custom Loading Slot (Optional, but keeping original look) -->
+      <template #loading>
+         <div v-for="i in 3" :key="i" class="skeleton-request">
+            <div style="display: flex; justify-content: space-between;">
+              <SkeletonLoader height="24px" width="150px" />
+              <SkeletonLoader height="24px" width="80px" border-radius="var(--radius-full)" />
+            </div>
+            <SkeletonLoader height="20px" width="40%" />
+         </div>
+      </template>
+    </DataList>
   </PortalLayout>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import PortalLayout from '@/layouts/PortalLayout.vue';
-import { PageHeader, EmptyState, SkeletonLoader } from '@/components/ui';
+import { PageHeader, DataList, SkeletonLoader } from '@/components/ui';
 import RequestCard from '../components/RequestCard.vue';
 import { transportApi } from '../api/transport.api';
 
@@ -71,12 +65,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.loading-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
 .skeleton-request {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -85,11 +73,5 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-}
-
-.requests-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
 }
 </style>

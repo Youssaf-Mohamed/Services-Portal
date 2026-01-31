@@ -169,16 +169,16 @@ const handleClick = (event) => {
 
 /* Success Variant */
 .ui-button.variant-success {
-  background: var(--color-success);
+  background: var(--color-success, #10b981); /* Excel Green */
   color: white;
   border-color: transparent;
 }
 
 .ui-button.variant-success:hover:not(:disabled) {
-  background: #0f5132;
+  background: #059669; /* Darker Emerald */
 }
 
-/* Loading state */
+/* Loading state -- kept from original */
 .button-spinner {
   width: 16px;
   height: 16px;

@@ -2,10 +2,17 @@
   <Modal v-model="isOpen" @close="handleClose" size="lg" :title="`Subscribe to ${route.name_en}`">
     <!-- Success State -->
     <div v-if="submitted" class="success-state">
-      <div class="success-icon">✅</div>
-      <h3>Request Submitted Successfully!</h3>
-      <p>Your subscription request has been submitted and is pending review.</p>
-      <Button variant="primary" @click="handleClose">Close</Button>
+      <div class="success-icon-wrapper">
+        <CheckCircle class="success-icon-svg" />
+      </div>
+      <h3>Request Submitted!</h3>
+      <p>Your subscription request has been received and is pending review. You can track its status in your dashboard.</p>
+      <div class="success-actions">
+        <Button variant="primary" @click="navigateToRequests">
+          Track Status
+        </Button>
+        <Button variant="text" @click="handleClose">Close</Button>
+      </div>
     </div>
 
     <!-- Form State -->
@@ -183,12 +190,15 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { Modal, Button } from '@/components/ui';
 import DaysSelector from './DaysSelector.vue';
 import { transportApi } from '../api/transport.api';
 import { useToast } from '@/composables/useToast';
+import { CheckCircle } from 'lucide-vue-next';
 
 const toast = useToast();
+const router = useRouter();
 
 const props = defineProps({
   route: {
@@ -369,6 +379,11 @@ const handleClose = () => {
   emit('close');
 };
 
+const navigateToRequests = () => {
+  router.push('/student/transport/my-requests');
+  handleClose();
+};
+
 // Lifecycle
 onMounted(() => {
   fetchPlans();
@@ -387,17 +402,46 @@ onMounted(() => {
 .success-state {
   text-align: center;
   padding: var(--spacing-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.success-icon {
-  font-size: 48px;
-  margin-bottom: var(--spacing-lg);
+.success-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  background: var(--color-successBg, #ecfdf5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.success-icon-svg {
+  width: 48px;
+  height: 48px;
+  color: var(--color-success);
 }
 
 .success-state h3 {
-  color: var(--color-success);
-  margin-bottom: var(--spacing-md);
+  font-size: 24px;
+  font-weight: 700;
   color: var(--color-textStrong);
+  margin-bottom: var(--spacing-md);
+}
+
+.success-state p {
+  color: var(--color-textMuted);
+  margin-bottom: var(--spacing-xl);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.success-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
 }
 
 .error-alert {
