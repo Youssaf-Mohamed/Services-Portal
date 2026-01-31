@@ -1,0 +1,5 @@
+Request ID: 2
+Screenshot Path: id-card/screenshots/user_5/66372432-941e-4b95-b6ba-bd60685be815.png
+Expected Absolute Path: D:\programing\University Projects\services-portal-v2\backend\storage\app/proofs/id-card/screenshots/user_5/66372432-941e-4b95-b6ba-bd60685be815.png
+File Exists via PHP file_exists: YES
+File Exists via Storage::exists: YES
