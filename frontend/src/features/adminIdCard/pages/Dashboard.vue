@@ -222,7 +222,7 @@ const fetchDashboard = async () => {
     const response = await adminIdCardApi.getDashboard();
     stats.value = { ...stats.value, ...response.data };
     
-    // Quick Hack: If total_revenue is missing from backend, estimate it
+    // Fallback: Estimate total revenue if the backend response omits it
     // Assuming approx 150 EGP per request for now
     if (!stats.value.total_revenue) {
         const totalReqs = stats.value.pending + stats.value.approved + stats.value.ready_for_pickup + stats.value.delivered_today;

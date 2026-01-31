@@ -1,5 +1,5 @@
 /**
- * Design Token System - Phase 3.6 (Official University Portal)
+ * Design Token System - Official University Portal
  * Strict palette: Deep Teal + Academic Blue + Grayscale.
  * Premium University Student Services Dashboard.
  */

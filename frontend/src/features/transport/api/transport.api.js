@@ -2,9 +2,10 @@
  * Transport API Layer
  * Centralized API module for transport feature
  * 
- * Phase 2A: Real backend integration for READ operations
- * Phase 2B: Subscription request submission
- * Phase 2C: Student status endpoints
+ * Features:
+ * - Real backend integration for READ operations
+ * - Subscription request submission
+ * - Student status endpoints
  */
 
 import axios from '@/utils/axios';
