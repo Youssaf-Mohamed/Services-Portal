@@ -24,7 +24,7 @@
         <!-- MAIN MENU Section (Student) -->
         <div v-if="isStudent" class="nav-section">
           <div class="nav-section-title">MAIN MENU</div>
-          <router-link to="/student/transport" class="nav-item" @click="closeSidebarOnMobile">
+          <router-link to="/student" class="nav-item" @click="closeSidebarOnMobile">
             <Home class="nav-icon" />
             <span class="nav-label">Home</span>
           </router-link>

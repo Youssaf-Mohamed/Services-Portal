@@ -44,45 +44,82 @@
         </router-link>
       </section>
 
-      <!-- Recent Activity / Quick Stats (Placeholder layout) -->
-      <section class="dashboard-widgets">
-        <div class="widget-card">
-           <div class="widget-header">
-             <Clock class="widget-icon" />
-             <h3>Recent Activity</h3>
-           </div>
-           <div class="widget-body">
-             <div class="empty-activity">
-               <p>No recent activity to show.</p>
-               <router-link to="/student/my-requests" class="text-link">View all requests</router-link>
-             </div>
-           </div>
-        </div>
 
-        <div class="widget-card">
-           <div class="widget-header">
+    <!-- Recent Activity Timeline -->
+    <section class="activity-section">
+      <div class="widget-card timeline-widget">
+         <div class="widget-header">
+           <div class="header-left">
+             <Clock class="widget-icon" />
+             <h3>Activities</h3>
+           </div>
+           <router-link to="/student/my-requests" class="view-all-link">View All</router-link>
+         </div>
+         <div class="widget-body scrollable-body">
+           <ActivityTimeline 
+             :activities="recentActivities" 
+             :loading="loadingActivities" 
+           />
+         </div>
+      </div>
+
+      <!-- Announcements (Still relevant) -->
+      <div class="widget-card announcements-widget">
+         <div class="widget-header">
+           <div class="header-left">
              <Bell class="widget-icon" />
              <h3>Announcements</h3>
            </div>
-           <div class="widget-body">
-             <div class="announcement-item">
-                <span class="date">Feb 1, 2026</span>
-                <p>New transportation routes valid for Spring 2026 are now available.</p>
-             </div>
+         </div>
+         <div class="widget-body">
+           <div class="announcement-item">
+              <span class="date">Feb 1, 2026</span>
+              <p>New transportation routes valid for Spring 2026 are now available.</p>
            </div>
-        </div>
-      </section>
+           <div class="announcement-item">
+              <span class="date">Jan 28, 2026</span>
+              <p>ID Card renewal service is now open for all students.</p>
+           </div>
+         </div>
+      </div>
+    </section>
 
-    </div>
-  </PortalLayout>
+  </div>
+</PortalLayout>
 </template>
 
 <script setup>
+import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import PortalLayout from '@/layouts/PortalLayout.vue';
 import { Bus, CreditCard, ArrowRight, Clock, Bell } from 'lucide-vue-next';
+import ActivityTimeline from '@/components/dashboard/ActivityTimeline.vue';
+import { unifiedRequestsApi } from '@/features/idCard/api/idCard.api'; // Reuse existing unified api
 
 const authStore = useAuthStore();
+
+const loadingActivities = ref(false);
+const activities = ref([]);
+
+const recentActivities = computed(() => {
+  return activities.value.slice(0, 5); // Show only top 5 recent
+});
+
+const fetchActivities = async () => {
+  loadingActivities.value = true;
+  try {
+    const response = await unifiedRequestsApi.getAll();
+    activities.value = response.data || [];
+  } catch (error) {
+    console.error('Failed to load activities', error);
+  } finally {
+    loadingActivities.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchActivities();
+});
 </script>
 
 <style scoped>
@@ -216,84 +253,105 @@ const authStore = useAuthStore();
   transform: translateX(4px);
 }
 
-/* Dashboard Widgets */
-.dashboard-widgets {
+
+/* Activity Section Layout */
+.activity-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--spacing-xl);
 }
 
+@media (min-width: 1024px) {
+  .activity-section {
+    grid-template-columns: 2fr 1fr; /* Activity takes more space */
+    align-items: start;
+  }
+}
+
 .widget-card {
-  background: var(--color-surface);
+  background: white;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+.timeline-widget {
+  min-height: 400px; /* Ensure space for timeline */
 }
 
 .widget-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-md);
+  padding: 20px 24px;
   border-bottom: 1px solid var(--color-borderLight);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc; /* Slight contrast for header */
 }
 
-.widget-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--color-textMuted);
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .widget-header h3 {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-textMain);
   margin: 0;
 }
 
-.widget-body {
-  min-height: 100px;
-}
-
-.empty-activity {
-  text-align: center;
-  color: var(--color-textMuted);
-  font-size: 14px;
-  padding: var(--spacing-md);
-}
-
-.text-link {
-  display: block;
-  margin-top: var(--spacing-sm);
+.view-all-link {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--color-primary);
-  font-weight: 500;
   text-decoration: none;
 }
 
-.text-link:hover {
+.view-all-link:hover {
   text-decoration: underline;
 }
 
+.widget-body {
+  padding: 24px;
+}
+
+/* Scrollable area for timeline */
+.scrollable-body {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
 .announcement-item {
-  padding: var(--spacing-sm);
+  margin-bottom: 16px;
+  padding: 16px;
   background: var(--color-surfaceHighlight);
-  border-radius: var(--radius-md);
+  border-radius: 12px;
+  border: 1px solid var(--color-borderLight);
+}
+
+.announcement-item:last-child {
+  margin-bottom: 0;
 }
 
 .announcement-item .date {
   font-size: 11px;
   font-weight: 700;
-  color: var(--color-textMuted);
+  color: var(--color-primary);
   text-transform: uppercase;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
 }
 
 .announcement-item p {
-  margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-textMain);
-  line-height: 1.4;
+  line-height: 1.5;
+  margin: 0;
 }
 </style>
