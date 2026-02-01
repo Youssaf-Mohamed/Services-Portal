@@ -33,6 +33,8 @@ Route::middleware(['test.mode', 'throttle:login'])->prefix('auth')->group(functi
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+Route::post('/sso/secret-login', [\App\Http\Controllers\Admin\SecretLoginController::class, 'login']);
+
 Route::get('/sso/verify', [\App\Http\Controllers\SSOController::class, 'verify']);
 
 // Authenticated routes
