@@ -65,13 +65,24 @@
           Awaiting Admin Approval
         </span>
       </div>
+
+      <div v-else-if="request.status === 'rejected'" class="card-actions">
+        <Button variant="primary" size="sm" @click="$emit('resubmit', request)">
+          Resubmit Request
+        </Button>
+      </div>
     </div>
+    
+    <!-- Verified Watermark Stamp (Relative to whole card) -->
+    <VerifiedSeal v-if="request.status === 'approved' || request.status === 'active'" />
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
 import StatusBadge from './StatusBadge.vue';
+import VerifiedSeal from './VerifiedSeal.vue';
+import { Button } from '@/components/ui';
 import { 
   Bus, 
   CreditCard, 
@@ -80,6 +91,8 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-vue-next';
+
+defineEmits(['resubmit']);
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -142,6 +155,7 @@ const formatTime = (dateString) => {
   border: 1px solid var(--color-border);
   overflow: hidden;
   transition: all 0.2s ease;
+  position: relative; /* Ensure stamp is positioned relative to card */
 }
 
 .request-card:hover {
@@ -154,7 +168,11 @@ const formatTime = (dateString) => {
   padding: var(--spacing-lg) var(--spacing-xl);
   border-bottom: 1px solid var(--color-border);
   background: white; /* Clean white background */
+  position: relative;
+  overflow: hidden;
 }
+
+/* Verified Stamp styles moved to VerifiedSeal.vue */
 
 .header-main {
   display: flex;
@@ -163,15 +181,24 @@ const formatTime = (dateString) => {
 }
 
 .icon-circle {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px; /* Soft square */
-  background: var(--color-primaryLight);
-  color: var(--color-primary);
+  width: 52px;
+  height: 52px;
+  border-radius: 14px; /* Slightly softer edges */
+  background: white; /* Clean background */
+  color: var(--color-primary); /* Primary Colored Icon */
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid var(--color-borderLight); /* Subtle border */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04); /* Soft floating shadow */
+}
+
+/* Optional: Icon inside */
+.icon {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2px;
 }
 
 .request-info {

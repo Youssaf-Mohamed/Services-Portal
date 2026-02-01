@@ -17,15 +17,7 @@
 
     <!-- Form State -->
     <div v-else class="request-form">
-      <!-- Error Alert -->
-      <div v-if="errorMessage" class="error-alert">
-        <strong>Error:</strong> {{ errorMessage }}
-        <ul v-if="validationErrors && Object.keys(validationErrors).length">
-          <li v-for="(errors, field) in validationErrors" :key="field">
-            {{ field }}: {{ Array.isArray(errors) ? errors.join(', ') : errors }}
-          </li>
-        </ul>
-      </div>
+      <!-- Error Alert Removed -->
 
       <!-- Service Info -->
       <div class="form-section">
@@ -81,6 +73,8 @@
               placeholder="Enter transaction number"
               :disabled="submitting"
             />
+            />
+            <p class="help-text">أدخل رقم المعاملة الموجود في إيصال الدفع</p>
           </div>
           <div class="form-group">
             <label for="transfer_time">Transfer Date & Time *</label>
@@ -92,33 +86,54 @@
               :max="maxDateTime"
               :disabled="submitting"
             />
+            />
+            <p class="help-text">يرجى تحديد وقت وتاريخ التحويل بدقة</p>
           </div>
+        </div>
+
+        <div v-if="isEditMode && editRequest.transfer_screenshot_url && !screenshotFile" class="existing-proof">
+             <p class="section-label">Current Screenshot:</p>
+             <a :href="editRequest.transfer_screenshot_url" target="_blank" class="view-proof-link">
+               <img :src="editRequest.transfer_screenshot_url" alt="Current Screenshot" class="proof-thumbnail" />
+               <span>View Current Screenshot</span>
+             </a>
+             <p class="help-text">Upload a new file below only if you want to replace this one.</p>
         </div>
 
         <FileUpload
           v-model="screenshotFile"
-          label="Transfer Screenshot"
+          :label="isEditMode ? 'Replace Transfer Screenshot' : 'Transfer Screenshot'"
           accept="image/jpeg,image/png"
           :max-size="5 * 1024 * 1024"
-          help-text="Upload screenshot of payment (JPG/PNG, max 5MB)"
-          :error="validationErrors.transfer_screenshot"
+          help-text="صورة واضحة لإيصال الدفع (JPG/PNG، بحد أقصى 5 ميجابايت)"
+          :error="validationErrors.transfer_screenshot?.[0]"
           :disabled="submitting"
-          required
+          :required="!isEditMode"
         />
       </div>
 
       <!-- Conditional: New Photo (for photo_change) -->
       <div v-if="type.requires_photo" class="form-section">
         <h3>New Photo</h3>
+        
+        <div v-if="isEditMode && editRequest.new_photo_url && !photoFile" class="existing-proof">
+             <p class="section-label">Current Photo:</p>
+             <a :href="editRequest.new_photo_url" target="_blank" class="view-proof-link">
+               <img :src="editRequest.new_photo_url" alt="Current Photo" class="proof-thumbnail" />
+               <span>View Current Photo</span>
+             </a>
+             <p class="help-text">Upload a new file below only if you want to replace this one.</p>
+        </div>
+
         <FileUpload
           v-model="photoFile"
-          label="Upload New Photo"
+          :label="isEditMode ? 'Replace New Photo' : 'Upload New Photo'"
           accept="image/jpeg,image/png"
           :max-size="2 * 1024 * 1024"
-          help-text="Passport-style photo for new ID card (JPG/PNG, max 2MB)"
-          :error="validationErrors.new_photo"
+          help-text="صورة شخصية حديثة بخلفية بيضاء (JPG/PNG، بحد أقصى 2 ميجابايت)"
+          :error="validationErrors.new_photo?.[0]"
           :disabled="submitting"
-          required
+          :required="!isEditMode && !editRequest?.new_photo_url"
         />
       </div>
 
@@ -136,6 +151,7 @@
             :disabled="submitting"
             maxlength="1000"
           ></textarea>
+          <p class="help-text">يرجى وصف المشكلة الموجودة في البطاقة الحالية بالتفصيل</p>
           <span class="help-text">{{ form.issue_description.length }}/1000 characters</span>
         </div>
       </div>
@@ -145,11 +161,12 @@
         <Button variant="text" @click="handleClose" :disabled="submitting">Cancel</Button>
         <Button 
           variant="primary" 
-          @click="handleSubmit" 
+          type="button"
+          @click.prevent="handleSubmit" 
           :disabled="!canSubmit || submitting"
           :loading="submitting"
         >
-          {{ submitting ? 'Submitting...' : 'Submit Request' }}
+          {{ submitting ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Request' : 'Submit Request') }}
         </Button>
       </div>
     </div>
@@ -175,6 +192,10 @@ const props = defineProps({
   settings: {
     type: Object,
     required: true
+  },
+  editRequest: {
+    type: Object,
+    default: null
   }
 });
 
@@ -198,6 +219,8 @@ const screenshotFile = ref(null);
 const photoFile = ref(null);
 
 // Computed
+const isEditMode = computed(() => !!props.editRequest);
+
 const iconComponent = computed(() => {
   const icons = {
     lost: CreditCard,
@@ -226,12 +249,29 @@ const maxDateTime = computed(() => {
 });
 
 const canSubmit = computed(() => {
-  if (!form.value.transaction_number || !form.value.transfer_time || !screenshotFile.value) {
+  if (!form.value.transaction_number || !form.value.transfer_time) {
     return false;
   }
-  if (props.type.requires_photo && !photoFile.value) {
-    return false;
+  
+  // Screenshot check
+  if (!isEditMode.value && !screenshotFile.value) {
+    return false; // Required for new
   }
+  if (isEditMode.value && !screenshotFile.value && !props.editRequest.has_transfer_screenshot) {
+      // If editing, no new file AND no old file -> invalid
+      return false;
+  }
+
+  // Photo check
+  if (props.type.requires_photo) {
+      if (!isEditMode.value && !photoFile.value) {
+          return false;
+      }
+      if (isEditMode.value && !photoFile.value && !props.editRequest.has_new_photo) {
+          return false;
+      }
+  }
+
   if (props.type.requires_description && !form.value.issue_description) {
     return false;
   }
@@ -240,7 +280,14 @@ const canSubmit = computed(() => {
 
 // Methods
 const handleSubmit = async () => {
-  if (!canSubmit.value || submitting.value) return;
+  console.log('handleSubmit called');
+  console.log('canSubmit:', canSubmit.value);
+  console.log('submitting:', submitting.value);
+  
+  if (!canSubmit.value || submitting.value) {
+      console.warn('Submission blocked. canSubmit:', canSubmit.value, 'submitting:', submitting.value);
+      return;
+  }
 
   submitting.value = true;
   errorMessage.value = '';
@@ -251,7 +298,10 @@ const handleSubmit = async () => {
     formData.append('type_code', props.type.code);
     formData.append('transaction_number', form.value.transaction_number);
     formData.append('transfer_time', form.value.transfer_time);
-    formData.append('transfer_screenshot', screenshotFile.value);
+    
+    if (screenshotFile.value) {
+        formData.append('transfer_screenshot', screenshotFile.value);
+    }
 
     if (props.type.requires_photo && photoFile.value) {
       formData.append('new_photo', photoFile.value);
@@ -260,13 +310,18 @@ const handleSubmit = async () => {
     if (props.type.requires_description && form.value.issue_description) {
       formData.append('issue_description', form.value.issue_description);
     }
-
-    await idCardApi.submitRequest(formData);
+    
+    if (isEditMode.value) {
+        await idCardApi.updateRequest(props.editRequest.id, formData);
+        toast.success('Request updated successfully!');
+    } else {
+        await idCardApi.submitRequest(formData);
+        toast.success('Request submitted successfully!');
+    }
 
     // Success
     submitted.value = true;
     emit('submitted');
-    toast.success('Request submitted successfully!');
 
   } catch (error) {
     console.error('Submission error:', error);
@@ -274,11 +329,14 @@ const handleSubmit = async () => {
     if (error.status === 422) {
       errorMessage.value = error.message || 'Validation failed. Please check your inputs.';
       validationErrors.value = error.errors || {};
-      toast.error('Please check the form for errors.');
+
+      // Extract the first error message
+      const firstError = Object.values(error.errors)[0]?.[0] || 'Please check the form for errors.';
+      toast.error(firstError);
     } else if (error.status === 409) {
       const msg = error.message || 'You already have a pending request for this service.';
       toast.error(msg, 6000);
-      handleClose();
+      if (!isEditMode.value) handleClose();
     } else {
       errorMessage.value = error.message || 'Failed to submit request. Please try again.';
       toast.error(errorMessage.value);
@@ -303,9 +361,21 @@ const navigateToMyRequests = () => {
 };
 
 onMounted(() => {
-  // Set current datetime
-  const now = new Date();
-  form.value.transfer_time = now.toISOString().slice(0, 16);
+  if (isEditMode.value) {
+      const r = props.editRequest;
+      form.value.transaction_number = r.transaction_number;
+      // Handle transfer_time format (might be YYYY-MM-DD HH:mm:ss, input wants YYYY-MM-DDTHH:mm)
+      // Assuming r.transfer_time is SQL format or ISO
+      // SQL: 2024-01-30 12:00:00 -> replace space with T, slice 0-16
+      if (r.transfer_time) {
+         form.value.transfer_time = r.transfer_time.replace(' ', 'T').slice(0, 16);
+      }
+      form.value.issue_description = r.issue_description || '';
+  } else {
+      // Set current datetime
+      const now = new Date();
+      form.value.transfer_time = now.toISOString().slice(0, 16);
+  }
 });
 </script>
 
@@ -558,7 +628,7 @@ textarea.form-control {
 }
 
 .help-text {
-  font-size: var(--font-xs);
+  font-size: 11px;
   color: var(--color-textMuted);
 }
 

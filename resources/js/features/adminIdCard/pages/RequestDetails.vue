@@ -210,11 +210,19 @@
               <CheckCircleIcon class="btn-icon" /> Approve Request
             </button>
           </template>
+          
           <template v-if="request.can.reject">
-            <button class="btn btn-danger" @click="showRejectModal = true">
+             <!-- Return for Correction (Soft Reject) -->
+            <button class="btn btn-warning" @click="openRejectModal('return')">
+              <RefreshCwIcon class="btn-icon" /> Return for Correction
+            </button>
+            
+            <!-- Hard Reject -->
+            <button class="btn btn-danger" @click="openRejectModal('reject')">
               <XCircleIcon class="btn-icon" /> Reject Request
             </button>
           </template>
+
           <template v-if="request.can.ready">
             <button class="btn btn-info" @click="markReady">
               <PackageIcon class="btn-icon" /> Mark Ready for Pickup
@@ -235,7 +243,7 @@
         <h3>Flag Payment</h3>
         <p>Please provide a reason for flagging this payment:</p>
         <textarea v-model="flagReason" placeholder="Enter reason..." rows="4"></textarea>
-        <div class="modal-actions">
+         <div class="modal-actions">
           <button class="btn btn-secondary" @click="showFlagModal = false">Cancel</button>
           <button class="btn btn-warning" @click="flagPayment" :disabled="!flagReason.trim()">
             Flag Payment
@@ -244,16 +252,34 @@
       </div>
     </div>
 
-    <!-- Reject Modal -->
+    <!-- Reject/Return Modal -->
     <div v-if="showRejectModal" class="modal-overlay" @click.self="showRejectModal = false">
       <div class="modal">
-        <h3>Reject Request</h3>
-        <p>Please provide a reason for rejection (will be visible to student):</p>
-        <textarea v-model="rejectReason" placeholder="Enter rejection reason..." rows="4"></textarea>
+        <h3 :class="rejectMode === 'return' ? 'text-warning' : 'text-danger'">
+          {{ rejectMode === 'return' ? 'Return Request for Correction' : 'Reject Request' }}
+        </h3>
+        
+        <p v-if="rejectMode === 'return'">
+          Explain what needs to be corrected (e.g., "Photo blurry", "Wrong ID"). The student will be notified to update and resubmit.
+        </p>
+        <p v-else>
+          Please provide a reason for rejection (this will be visible to the student).
+        </p>
+        
+        <textarea 
+          v-model="rejectReason" 
+          :placeholder="rejectMode === 'return' ? 'Enter correction details...' : 'Enter rejection reason...'" 
+          rows="4"
+        ></textarea>
+        
         <div class="modal-actions">
           <button class="btn btn-secondary" @click="showRejectModal = false">Cancel</button>
-          <button class="btn btn-danger" @click="rejectRequest" :disabled="!rejectReason.trim()">
-            Reject Request
+          <button 
+            :class="rejectMode === 'return' ? 'btn btn-warning' : 'btn btn-danger'" 
+            @click="rejectRequest" 
+            :disabled="!rejectReason.trim()"
+          >
+            {{ rejectMode === 'return' ? 'Return Request' : 'Reject Request' }}
           </button>
         </div>
       </div>
@@ -277,7 +303,8 @@ import {
   XCircle as XCircleIcon, 
   Package as PackageIcon, 
   Truck as TruckIcon,
-  Flag as FlagIcon
+  Flag as FlagIcon,
+  RefreshCw as RefreshCwIcon
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -293,6 +320,7 @@ const fetchScreenshot = () => adminIdCardApi.downloadAttachment(requestId.value,
 const fetchNewPhoto = () => adminIdCardApi.downloadAttachment(requestId.value, 'new_photo');
 const showFlagModal = ref(false);
 const showRejectModal = ref(false);
+const rejectMode = ref('reject'); // 'reject' or 'return'
 const flagReason = ref('');
 const rejectReason = ref('');
 
@@ -377,6 +405,11 @@ const approveRequest = async () => {
   } catch (err) {
     alert(err.message);
   }
+};
+
+const openRejectModal = (mode) => {
+  rejectMode.value = mode;
+  showRejectModal.value = true;
 };
 
 const rejectRequest = async () => {

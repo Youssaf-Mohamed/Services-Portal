@@ -99,7 +99,7 @@
       <!-- Custom Slot: Actions -->
       <template #cell-actions="{ row }">
           <button class="btn-icon" @click.stop="goToDetails(row.id)" title="View Details">
-            👁️
+            <Eye size="18" />
           </button>
       </template>
     </DataTable>
@@ -113,6 +113,7 @@ import { useRouter, useRoute } from 'vue-router';
 import PortalLayout from '@/layouts/PortalLayout.vue';
 import { PageHeader, DataTable, StatusBadge } from '@/components/ui';
 import { adminIdCardApi } from '../api/adminIdCard.api';
+import { Eye } from 'lucide-vue-next';
 
 const router = useRouter();
 const route = useRoute();

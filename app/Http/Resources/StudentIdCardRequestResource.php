@@ -27,6 +27,9 @@ class StudentIdCardRequestResource extends JsonResource
             'transfer_time' => $this->transfer_time?->toIso8601String(),
             'payment_status' => $this->payment_status->value,
             'payment_status_label' => $this->payment_status->label(),
+            'payment_status_label' => $this->payment_status->label(),
+            'payment_flag_reason' => $this->payment_flag_reason,
+            'has_transfer_screenshot' => !empty($this->transfer_screenshot_path),
             'has_new_photo' => $this->hasNewPhoto(),
             'issue_description' => $this->when(
                 $this->type->requires_description,

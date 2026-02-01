@@ -17,15 +17,7 @@
 
     <!-- Form State -->
     <div v-else class="subscription-form">
-      <!-- Error Alert -->
-      <div v-if="errorMessage" class="error-alert">
-        <strong>Error:</strong> {{ errorMessage }}
-        <ul v-if="validationErrors">
-          <li v-for="(errors, field) in validationErrors" :key="field">
-            {{ field }}: {{ errors.join(', ') }}
-          </li>
-        </ul>
-      </div>
+      <!-- Error Alert Removed -->
 
       <!-- Route Info -->
       <div class="form-section">
@@ -143,6 +135,7 @@
               placeholder="e.g., 01012345678"
               class="form-control"
             />
+            <p class="help-text">رقم الهاتف المستخدم في الدفع (فودافون كاش)</p>
           </div>
           <div class="form-group">
             <label>Payment Date</label>
@@ -152,6 +145,7 @@
               class="form-control"
               :max="todayDate"
             />
+            <p class="help-text">تاريخ إجراء عملية الدفع</p>
           </div>
         </div>
       </div>
@@ -159,18 +153,27 @@
       <!-- Upload Payment Proof -->
       <div class="form-section">
         <h3>Upload Payment Proof</h3>
-        <input 
-          type="file" 
-          accept="image/jpeg,image/png,image/webp"
-          @change="handleFileUpload"
-          class="file-input"
-          ref="fileInput"
-        />
-        <p class="help-text">Upload receipt/proof of payment (JPEG, PNG, or WebP, max 2MB)</p>
-        <div v-if="proofPreview" class="file-preview">
-          <img :src="proofPreview" alt="Payment proof preview" />
-          <span>{{ proofFile?.name }}</span>
+        
+        <!-- Existing Proof (Edit Mode) -->
+        <div v-if="isEditMode && editRequest.proof_url && !proofFile" class="existing-proof">
+             <p class="section-label">Current Proof:</p>
+             <a :href="editRequest.proof_url" target="_blank" class="view-proof-link">
+               <img :src="editRequest.proof_url" alt="Current Proof" class="proof-thumbnail" />
+               <span>View Current Proof</span>
+             </a>
+             <p class="help-text">Upload a new file below only if you want to replace this one.</p>
         </div>
+
+        <FileUpload
+          v-model="proofFile"
+          :label="isEditMode ? 'Replace Payment Proof' : 'Upload Payment Proof'"
+          accept="image/jpeg,image/png,image/webp"
+          :max-size="2 * 1024 * 1024"
+          help-text="صورة لإيصال أو دليل الدفع (JPEG, PNG, WebP، بحد أقصى 2 ميجابايت)"
+          :error="validationErrors?.proof?.[0]"
+          :disabled="submitting"
+          :required="!isEditMode"
+        />
       </div>
 
       <!-- Form Actions -->
@@ -181,7 +184,7 @@
           @click="handleSubmit" 
           :disabled="!canSubmit || submitting"
         >
-          {{ submitting ? 'Submitting...' : 'Submit Request' }}
+          {{ submitting ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Request' : 'Submit Request') }}
         </Button>
       </div>
     </div>
@@ -191,7 +194,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { Modal, Button } from '@/components/ui';
+import { Modal, Button, FileUpload } from '@/components/ui';
 import DaysSelector from './DaysSelector.vue';
 import { transportApi } from '../api/transport.api';
 import { useToast } from '@/composables/useToast';
@@ -208,6 +211,10 @@ const props = defineProps({
   settings: {
     type: Object,
     default: () => ({ days_per_week: 5, weeks_in_month: 4, weeks_in_term: 12 })
+  },
+  editRequest: {
+    type: Object,
+    default: null
   }
 });
 
@@ -223,7 +230,6 @@ const selectedPaymentMethod = ref('');
 const paidFromNumber = ref('');
 const paidAt = ref('');
 const proofFile = ref(null);
-const proofPreview = ref(null);
 const paymentMethods = ref([]);
 const loadingPaymentMethods = ref(false);
 const submitting = ref(false);
@@ -232,6 +238,7 @@ const errorMessage = ref('');
 const validationErrors = ref(null);
 
 // Computed
+const isEditMode = computed(() => !!props.editRequest);
 const todayDate = computed(() => new Date().toISOString().split('T')[0]);
 
 const selectedPlan = computed(() => {
@@ -249,12 +256,18 @@ const planDiscount = (plan) => {
 };
 
 const canSubmit = computed(() => {
-  return selectedPlanId.value && 
+  const basicChecks = selectedPlanId.value && 
          selectedDays.value.length === selectedPlan.value?.allowed_days_per_week &&
          selectedPaymentMethod.value && 
          paidFromNumber.value.length >= 8 &&
-         paidAt.value &&
-         proofFile.value;
+         paidAt.value;
+
+  if (isEditMode.value) {
+      // In edit mode, proof is optional (can keep old one)
+      return basicChecks; 
+  }
+  
+  return basicChecks && proofFile.value;
 });
 
 const selectedPaymentMethodDetails = computed(() => {
@@ -281,9 +294,16 @@ const computedPrice = computed(() => {
   }
 });
 
-// Watch for plan change to reset days
-watch(selectedPlanId, () => {
-  selectedDays.value = [];
+// Watch for plan change to reset days (only if not editing initial load)
+watch(selectedPlanId, (newVal, oldVal) => {
+    // If we are initializing from edit request, don't clear days
+    if (isEditMode.value && oldVal === null && props.editRequest?.plan_id === newVal) {
+        return;
+    }
+    // Otherwise clear days when switching plans manually
+    if (oldVal !== null) {
+        selectedDays.value = [];
+    }
 });
 
 // Methods
@@ -292,6 +312,11 @@ const fetchPlans = async () => {
   try {
     const response = await transportApi.getPlans();
     plans.value = response.data.plans || [];
+    
+    // If edit mode, set selected plan logic here after plans loaded
+    if (isEditMode.value && props.editRequest) {
+        initEditData();
+    }
   } catch (error) {
     console.error('Failed to load plans:', error);
     errorMessage.value = 'Failed to load subscription plans. Please try again.';
@@ -313,12 +338,25 @@ const fetchPaymentMethods = async () => {
   }
 };
 
-const handleFileUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    proofFile.value = file;
-    proofPreview.value = URL.createObjectURL(file);
-  }
+const initEditData = () => {
+    const r = props.editRequest;
+    if (!r) return;
+
+    selectedPlanId.value = r.plan_id;
+    // We need to wait for plans to be loaded to set selectedPlan, but selectedPlan is computed from selectedPlanId.
+    // So setting selectedPlanId is enough.
+    
+    // Restore days
+    if (r.selected_days) {
+        selectedDays.value = [...r.selected_days];
+    }
+    
+    selectedPaymentMethod.value = r.payment_method_id;
+    paidFromNumber.value = r.paid_from_number;
+    // Format date: "2024-01-01 10:00:00" -> "2024-01-01"
+    if (r.paid_at) {
+        paidAt.value = r.paid_at.split(' ')[0];
+    }
 };
 
 const handleSubmit = async () => {
@@ -332,6 +370,8 @@ const handleSubmit = async () => {
     // Build FormData
     const formData = new FormData();
     formData.append('route_id', props.route.id);
+    // If updating, include _method PUT? No, using POST with special route.
+    
     formData.append('plan_id', selectedPlanId.value);
     formData.append('plan_type', selectedPlan.value.plan_type);
     
@@ -344,10 +384,18 @@ const handleSubmit = async () => {
     formData.append('paid_from_number', paidFromNumber.value);
     formData.append('paid_at', paidAt.value);
     formData.append('amount_paid', computedPrice.value);
-    formData.append('proof', proofFile.value);
     
-    // Submit to API
-    await transportApi.submitSubscriptionRequest(formData);
+    if (proofFile.value) {
+        formData.append('proof', proofFile.value);
+    }
+    
+    if (isEditMode.value) {
+        await transportApi.updateSubscriptionRequest(props.editRequest.id, formData);
+        toast.success('Request updated successfully!');
+    } else {
+        await transportApi.submitSubscriptionRequest(formData);
+        toast.success('Request submitted successfully!');
+    }
     
     // Success
     submitted.value = true;
@@ -357,13 +405,17 @@ const handleSubmit = async () => {
     console.error('Submission error:', error);
     
     if (error.status === 409) {
-      const msg = error.message || 'You already have a pending or active subscription.';
+      const msg = isEditMode.value 
+        ? (error.message || 'Conflict error.') 
+        : (error.message || 'You already have a pending or active subscription.');
       toast.error(msg, 6000);
-      handleClose();
+      if (!isEditMode.value) handleClose();
     } else if (error.status === 422) {
       errorMessage.value = error.message || 'Validation failed. Please check your inputs.';
       validationErrors.value = error.errors;
-      toast.error('Please check the form for errors.');
+      // Extract the first error message
+      const firstError = Object.values(error.errors)[0]?.[0] || 'Please check the form for errors.';
+      toast.error(firstError);
     } else {
       toast.error(error.message || 'Failed to submit request. Please try again.');
     }
@@ -373,9 +425,6 @@ const handleSubmit = async () => {
 };
 
 const handleClose = () => {
-  if (proofPreview.value) {
-    URL.revokeObjectURL(proofPreview.value);
-  }
   emit('close');
 };
 
@@ -388,7 +437,9 @@ const navigateToRequests = () => {
 onMounted(() => {
   fetchPlans();
   fetchPaymentMethods();
-  paidAt.value = todayDate.value;
+  if (!isEditMode.value) {
+      paidAt.value = todayDate.value;
+  }
 });
 </script>
 
@@ -625,39 +676,45 @@ onMounted(() => {
   font-style: italic;
 }
 
-.file-input {
-  padding: var(--spacing-md);
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-md);
-  width: 100%;
-  cursor: pointer;
-  transition: border-color var(--transition-fast);
-}
-
-.file-input:hover {
-  border-color: var(--color-primaryLight);
-}
-
-.file-preview {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-md);
+.existing-proof {
+  margin-bottom: var(--spacing-sm);
   padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   background: var(--color-surfaceHighlight);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-borderLight);
 }
 
-.file-preview img {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
+.section-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-textMuted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.view-proof-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.view-proof-link:hover {
+    text-decoration: underline;
+}
+
+.proof-thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
 }
 
 .help-text {
-  font-size: var(--font-xs);
+  font-size: 11px;
   color: var(--color-textMuted);
   margin-top: var(--spacing-xs);
 }

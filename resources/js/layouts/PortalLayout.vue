@@ -144,6 +144,10 @@
                 <FileText class="nav-icon small-icon" />
                 <span class="nav-label">Requests</span>
               </router-link>
+              <router-link to="/admin/id-card/types" class="nav-item child-item" @click="closeSidebarOnMobile">
+                <CreditCard class="nav-icon small-icon" />
+                <span class="nav-label">Types</span>
+              </router-link>
               <router-link to="/admin/id-card/settings" class="nav-item child-item" @click="closeSidebarOnMobile">
                 <Settings class="nav-icon small-icon" />
                 <span class="nav-label">Settings</span>
@@ -385,45 +389,75 @@ const handleLogout = async () => {
   margin-bottom: var(--spacing-xs);
 }
 
+
 .nav-item {
+  position: relative; /* Context for pseudo-elements */
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: 10px var(--spacing-lg); /* Slightly reduced padding */
+  padding: 10px var(--spacing-lg);
   color: var(--color-textMain);
   text-decoration: none;
   transition: all 0.2s ease;
-  border-left: 3px solid transparent;
+  border-radius: var(--radius-md); /* Apply radius to item */
   cursor: pointer;
   font-size: 14px;
   font-weight: var(--fw-medium);
-  margin-right: var(--spacing-sm); /* Spacing from right edge */
+  margin-right: var(--spacing-sm);
+  z-index: 1; /* Text above bg */
 }
 
+/* Hover State */
 .nav-item:hover {
-  background-color: var(--color-surfaceHighlight);
   color: var(--color-primary);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
-.nav-item:focus-visible {
-  outline: none;
-  background-color: var(--color-surfaceHighlight); /* Subtle feedback instead of ring */
+.nav-item:hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-primary);
+  opacity: 0.05; /* Subtle hover tint */
+  border-radius: var(--radius-md);
+  z-index: -1;
 }
 
+/* Active State */
 .nav-item.router-link-active {
-  background-color: var(--color-primaryLight); 
-  border-left-color: var(--color-primary);
+  background-color: transparent; /* Handled by pseudo */
   color: var(--color-primary);
-  font-weight: var(--fw-bold);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0; /* Modern look */
+  font-weight: 700;
+  box-shadow: none;
 }
 
-.nav-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  opacity: 0.7;
+/* Faint Background Tint (Active) */
+.nav-item.router-link-active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-primary);
+  opacity: 0.08; /* Very Faint Tint (Requested) */
+  border-radius: var(--radius-md);
+  z-index: -1;
+}
+
+/* Active Dot Indicator */
+.nav-item.router-link-active::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); /* Crisp edge */
+}
+
+.nav-item.router-link-active .nav-icon {
+  opacity: 1;
+  color: var(--color-primary); 
 }
 
 .small-icon {
@@ -497,16 +531,16 @@ const handleLogout = async () => {
 
 /* Main Content */
 .portal-main {
-  margin-top: 64px;
   margin-left: 260px;
-  min-height: calc(100vh - 64px);
+  min-height: 100vh;
   background: var(--color-background);
-  padding: var(--spacing-lg); /* Reduced to lg for tighter fit */
+  /* Increased top padding significantly as requested for "distance" */
+  padding: calc(64px + 32px) 32px 32px 32px; 
   transition: margin-left var(--transition-normal);
 }
 
 .content-container {
-  max-width: 1200px;
+  max-width: 1400px; /* Wider container to breathe */
   margin: 0 auto;
 }
 

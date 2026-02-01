@@ -64,6 +64,31 @@ export const idCardApi = {
   },
 
   /**
+   * Update (resubmit) a rejected ID card request.
+   * @param {number} id - Request ID
+   * @param {FormData} formData - Updated form data
+   * @returns {Promise<object>} API response
+   */
+  async updateRequest(id, formData) {
+    try {
+      const response = await axios.post(`/api/id-card/requests/${id}`, formData, {
+        headers: {
+            'Content-Type': undefined
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('idCardApi.updateRequest error:', error);
+      
+      const errorData = error.response?.data;
+      const errorObj = new Error(errorData?.message || 'Failed to update request');
+      errorObj.status = error.response?.status;
+      errorObj.errors = errorData?.errors;
+      throw errorObj;
+    }
+  },
+
+  /**
    * Get student's ID card requests.
    * @returns {Promise<object>} API response with requests array
    */

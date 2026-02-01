@@ -263,7 +263,7 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .help-text {
-  font-size: var(--font-xs);
+  font-size: 11px;
   color: var(--color-textMuted);
 }
 

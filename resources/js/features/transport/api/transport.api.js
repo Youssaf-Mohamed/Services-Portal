@@ -96,6 +96,31 @@ export const transportApi = {
   },
 
   /**
+   * Update (resubmit) a rejected subscription request.
+   * @param {number} id - Request ID
+   * @param {FormData} formData - Updated form data
+   * @returns {Promise<object>} API response
+   */
+  async updateSubscriptionRequest(id, formData) {
+    try {
+      const response = await axios.post(`/api/transport/subscription-requests/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('transportApi.updateSubscriptionRequest error:', error);
+      
+      const errorData = error.response?.data;
+      const errorObj = new Error(errorData?.message || 'Failed to update request');
+      errorObj.status = error.response?.status;
+      errorObj.errors = errorData?.errors;
+      throw errorObj;
+    }
+  },
+
+  /**
    * Get student's subscription requests (paginated).
    * @returns {Promise<object>} API response with requests array
    */

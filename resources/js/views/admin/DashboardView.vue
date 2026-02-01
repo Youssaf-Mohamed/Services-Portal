@@ -1,7 +1,10 @@
 <template>
   <div class="admin-page">
-    <div class="header">
-      <h1>Admin Dashboard</h1>
+    <div class="header-container">
+      <PageHeader
+        title="Admin Dashboard"
+        subtitle="System overview and quick links"
+      />
       <button @click="handleLogout" class="logout-btn">
         <LogOut class="btn-icon" /> Logout
       </button>
@@ -146,6 +149,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import axios from '../../utils/axios';
+import { PageHeader } from '@/components/ui';
 import { 
   LogOut, Mail, Shield, Bus, CreditCard, 
   BarChart3, FileText, Map, Calendar, Users,
@@ -195,19 +199,14 @@ const testStorageCheck = async () => {
   padding: var(--spacing-xl);
 }
 
-.header {
+.header-container {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: var(--spacing-xl);
 }
 
-h1 {
-  color: var(--color-primary);
-  margin: 0;
-  font-size: var(--font-2xl);
-  font-weight: var(--fw-bold);
-}
+
 
 .logout-btn {
   display: flex;

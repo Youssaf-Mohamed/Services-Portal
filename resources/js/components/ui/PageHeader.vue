@@ -1,6 +1,11 @@
 <template>
   <div class="ui-page-header">
-    <nav v-if="breadcrumbs.length" class="breadcrumb">
+    <nav class="breadcrumb">
+      <router-link to="/student" class="breadcrumb-item home-icon">
+        <Home class="w-3 h-3" />
+      </router-link>
+      <span class="breadcrumb-separator">/</span>
+      
       <template v-for="(crumb, index) in breadcrumbs" :key="index">
         <router-link
           v-if="crumb.to"
@@ -9,18 +14,23 @@
         >
           {{ crumb.label }}
         </router-link>
-        <span v-else class="breadcrumb-item" :class="{ active: index === breadcrumbs.length - 1 }">
+        <span v-else class="breadcrumb-item active">
           {{ crumb.label }}
         </span>
-        <span v-if="index < breadcrumbs.length - 1" class="breadcrumb-separator">›</span>
+        <span v-if="index < breadcrumbs.length - 1" class="breadcrumb-separator">/</span>
       </template>
     </nav>
-    <h1 class="page-title">{{ title }}</h1>
-    <p v-if="subtitle" class="page-subtitle">{{ subtitle }}</p>
+    
+    <div class="header-content">
+      <h1 class="page-title">{{ title }}</h1>
+      <p v-if="subtitle" class="page-subtitle">{{ subtitle }}</p>
+    </div>
   </div>
 </template>
 
 <script setup>
+import { Home } from 'lucide-vue-next';
+
 defineProps({
   title: {
     type: String,
@@ -39,23 +49,25 @@ defineProps({
 
 <style scoped>
 .ui-page-header {
-  margin-bottom: var(--spacing-lg);
-  padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--color-borderLight);
+  margin-bottom: var(--spacing-xl);
+  /* Removed border-bottom for cleaner look like reference */
 }
 
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  font-size: var(--font-sm);
-  margin-bottom: var(--spacing-md);
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-textMuted);
+  margin-bottom: var(--spacing-sm);
 }
 
 .breadcrumb-item {
   color: var(--color-textMuted);
   text-decoration: none;
-  transition: color var(--transition-fast);
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
 }
 
 .breadcrumb-item:hover {
@@ -63,27 +75,32 @@ defineProps({
 }
 
 .breadcrumb-item.active {
-  color: var(--color-textStrong);
-  font-weight: var(--fw-medium);
+  color: var(--color-textMain);
+  cursor: default;
+}
+
+.home-icon {
+  display: flex;
+  align-items: center;
+  color: var(--color-textMuted);
 }
 
 .breadcrumb-separator {
-  color: var(--color-textMuted); /* Was --color-border, increased contrast */
-  font-weight: bold;
-  opacity: 0.7;
+  color: var(--color-border);
+  font-size: 12px;
 }
 
 .page-title {
-  font-size: var(--font-2xl);
-  font-weight: var(--fw-bold);
-  color: var(--color-textStrong);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-textMain);
   margin: 0;
-  letter-spacing: -0.5px; /* Tighter tracking for headers */
+  line-height: 1.3;
 }
 
 .page-subtitle {
-  font-size: var(--font-base);
+  font-size: 14px;
   color: var(--color-textMuted);
-  margin: var(--spacing-xs) 0 0 0;
+  margin: 4px 0 0 0;
 }
 </style>

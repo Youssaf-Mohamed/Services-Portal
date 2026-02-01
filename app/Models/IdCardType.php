@@ -41,7 +41,7 @@ class IdCardType extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('active', true);
+        return $query->where('active', 1);
     }
 
     /**

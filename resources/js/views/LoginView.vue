@@ -1,7 +1,9 @@
 <template>
   <div class="login-container">
     <div class="login-card">
-      <h1>Services Portal Login</h1>
+      <div class="login-header">
+        <h2>Services Portal Login</h2>
+      </div>
       
       <form @submit.prevent="handleLogin">
         <div class="form-group">
@@ -71,7 +73,7 @@ const handleLogin = async () => {
     if (role === 'admin') {
       router.push('/admin');
     } else if (role === 'student') {
-      router.push('/student/transport');
+      router.push('/student');
     }
   } catch (err) {
     error.value = err.response?.data?.message || 'Login failed. Please try again.';
@@ -100,11 +102,19 @@ const handleLogin = async () => {
   max-width: 420px;
 }
 
-h1 {
+.login-header {
   margin-bottom: 2rem;
-  color: #2d3748;
   text-align: center;
-  font-size: 1.75rem;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 1.5rem;
+}
+
+.login-header h2 {
+  color: #2d3748;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .form-group {

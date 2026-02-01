@@ -213,4 +213,147 @@ class StudentTransportRequestController extends Controller
             201
         );
     }
+    /**
+     * Update and resubmit a rejected subscription request.
+     */
+    public function update(\App\Http\Requests\Transport\UpdateSubscriptionRequest $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        
+        $subscriptionRequest = TransportSubscriptionRequest::where('user_id', $user->id)
+            ->where('id', $id)
+            ->first();
+            
+        if (!$subscriptionRequest) {
+            return ApiResponse::error('Request not found', null, 404);
+        }
+        
+        // Only allow updating if status is REJECTED
+        if ($subscriptionRequest->status !== RequestStatus::REJECTED->value) {
+            return ApiResponse::error('Only rejected requests can be resubmitted.', null, 422);
+        }
+        
+        // Load dependencies
+        $settings = TransportSetting::firstOrFail();
+        $route = BusRoute::findOrFail($request->route_id);
+        $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
+        
+        // Check if this is a plan-based request or legacy
+        $isPlanBased = $request->filled('plan_id') && $request->filled('selected_days');
+        
+        if ($isPlanBased) {
+            // NEW PLAN-BASED PRICING
+            $plan = TransportPlan::findOrFail($request->plan_id);
+            
+            if (!$plan->active) {
+                return ApiResponse::error('Selected plan is not active', null, 422);
+            }
+            
+            try {
+                $this->pricingService->validateSelectedDays($plan, $request->selected_days);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return ApiResponse::error('Invalid days selection', $e->errors(), 422);
+            }
+            
+            $pricingResult = $this->pricingService->calculateWithPlan(
+                $route, $plan, $request->selected_days, $settings
+            );
+            $expectedAmount = $pricingResult['amount'];
+            $pricingSnapshot = $pricingResult['breakdown'];
+        } else {
+            // LEGACY PRICING
+            $plan = null;
+            $pricing = $this->pricingService->calculate(
+                $request->plan_type, $route, $settings
+            );
+            $expectedAmount = $pricing['final_amount'];
+            $pricingSnapshot = $pricing;
+        }
+        
+        // Handle Slot Logic
+        // For update, we might keep the old slot if not changed, but here we validate it again
+        if ($request->filled('slot_id')) {
+            $slot = \App\Models\TransportSlot::find($request->slot_id);
+            
+            if (!$slot) {
+                return ApiResponse::error('Selected time slot not found', null, 404);
+            }
+
+            // Only check capacity if slot CHANGED or if it was previously rejected (maybe due to capacity?)
+            // But to be safe, always check capacity if they are re-submitting.
+            // Exception: If they are booking the SAME slot they already have a (pending/rejected) request for.
+            // But wait, rejected requests don't hold seats. So we MUST check capacity again.
+            
+            $activeReservations = \App\Models\TransportSeatReservation::where('slot_id', $slot->id)
+                ->whereNull('released_at')
+                ->count();
+            
+            $capacityRemaining = $slot->capacity - $activeReservations;
+            
+            if ($capacityRemaining <= 0) {
+                return ApiResponse::error(
+                    'This time slot is fully booked. Please select a different time slot.',
+                    ['capacity_remaining' => 0],
+                    422
+                );
+            }
+        }
+        
+        // Validate amount
+        $amountPaid = (float) $request->amount_paid;
+        if (abs($amountPaid - $expectedAmount) > 0.01) {
+            return ApiResponse::error(
+                'Amount must match the required price of EGP ' . number_format($expectedAmount, 2),
+                ['expected_amount' => $expectedAmount],
+                422
+            );
+        }
+        
+        // Handle Proof File
+        $proofPath = $subscriptionRequest->proof_path;
+        if ($request->hasFile('proof')) {
+            $proofPath = ProofStorage::storeProof($request->file('proof'), $user->id);
+            // Ideally delete old proof, but keeping history is safer for now
+        }
+        
+        // Update the request
+        $subscriptionRequest->update([
+            'route_id' => $route->id,
+            'slot_id' => $request->slot_id,
+            'plan_id' => $isPlanBased ? $plan->id : null,
+            'selected_days' => $isPlanBased ? $request->selected_days : null,
+            'plan_type' => $request->plan_type,
+            'status' => RequestStatus::PENDING->value, // Reset to Pending
+            'payment_method_id' => $paymentMethod->id,
+            'paid_from_number' => $request->paid_from_number,
+            'paid_at' => $request->paid_at,
+            'proof_path' => $proofPath,
+            'amount_expected' => $expectedAmount,
+            'pricing_snapshot' => [
+                'route_id' => $route->id,
+                'slot_id' => $request->slot_id,
+                'plan_id' => $isPlanBased ? $plan->id : null,
+                'plan_type' => $request->plan_type,
+                'selected_days' => $isPlanBased ? $request->selected_days : null,
+                'pricing' => $pricingSnapshot,
+                'computed_at' => now()->toIso8601String(),
+            ],
+            'rejection_reason' => null, // Clear rejection reason
+            'approved_by' => null,
+            'approved_at' => null,
+        ]);
+        
+        Log::channel('daily')->info('Transport request resubmitted', [
+            'user_id' => $user->id,
+            'request_id' => $subscriptionRequest->id
+        ]);
+        
+        // Re-send notification if needed or just notify admin
+        // $this->notificationService->notifyRequestSubmitted($user, $subscriptionRequest->id);
+        
+        return ApiResponse::success(
+            new StudentSubscriptionRequestResource($subscriptionRequest),
+            'Request resubmitted successfully'
+        );
+    }
 }

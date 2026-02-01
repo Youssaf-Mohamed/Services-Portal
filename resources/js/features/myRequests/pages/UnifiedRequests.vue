@@ -49,13 +49,28 @@
       @action="activeFilter = 'all'"
     />
 
+    <!-- Table Header Row -->
+    <div v-if="filteredRequests.length > 0" class="table-header">
+      <div class="col service">Service</div>
+      <div class="col type">Type</div>
+      <div class="col status">Status</div>
+      <div class="col amount">Amount</div>
+      <div class="col date">Date</div>
+      <div class="col actions">Actions</div>
+    </div>
+
     <!-- Requests List -->
-    <div v-else class="requests-list">
+    <div v-if="!loading && filteredRequests.length" class="requests-list">
       <UnifiedRequestCard
         v-for="request in filteredRequests"
         :key="`${request.module}-${request.id}`"
         :request="request"
       />
+    </div>
+
+    <!-- Empty/Loading States -->
+    <div v-else-if="loading" class="loading-list">
+       <SkeletonLoader v-for="i in 4" :key="i" height="70px" width="100%" border-radius="var(--radius-lg)" />
     </div>
   </PortalLayout>
 </template>
@@ -127,50 +142,90 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Modern Segmented Control Filters */
 .filter-tabs {
-  display: flex;
-  gap: var(--spacing-sm);
+  display: inline-flex;
+  padding: 6px;
   margin-bottom: var(--spacing-xl);
-  padding: var(--spacing-sm);
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
+  background: white;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Clean floating look */
 }
 
 .filter-tab {
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: 8px 20px;
   border: none;
   background: transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  transition: all 0.2s ease;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-textMuted);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 8px;
 }
 
 .filter-tab:hover {
-  background: var(--color-background);
-  color: var(--color-text-primary);
+  color: var(--color-textMain);
 }
 
 .filter-tab.active {
+  background: var(--color-surfaceHighlight); 
+  color: var(--color-primary);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.count-badge {
+  padding: 1px 7px;
+  min-width: 18px;
+  text-align: center;
+  border-radius: 99px;
+  background: var(--color-border);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-textMuted);
+}
+
+.filter-tab.active .count-badge {
   background: var(--color-primary);
   color: white;
 }
 
-.count-badge {
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.2);
-  font-size: 0.75rem;
+/* Table Header */
+.table-header {
+  display: grid;
+  grid-template-columns: 280px 1.5fr 140px 100px 120px 100px;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-xl);
+  margin-bottom: var(--spacing-xs);
+  border-bottom: 2px solid var(--color-border);
 }
 
-.filter-tab:not(.active) .count-badge {
-  background: var(--color-background);
-  color: var(--color-text-tertiary);
+.col {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-textMuted);
+}
+
+/* Alignment */
+.col.amount, .col.actions { text-align: right; }
+.col.status { text-align: center; }
+
+/* Requests List */
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 .loading-list {
@@ -179,27 +234,7 @@ onMounted(() => {
   gap: var(--spacing-md);
 }
 
-.skeleton-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-}
-
-.requests-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-@media (max-width: 768px) {
-  .filter-tabs {
-    flex-wrap: wrap;
-  }
-  
-  .filter-tab {
-    flex: 1;
-    justify-content: center;
-  }
+@media (max-width: 1000px) {
+  .table-header { display: none; } /* Hide header on mobile/tablet */
 }
 </style>

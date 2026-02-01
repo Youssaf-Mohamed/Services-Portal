@@ -10,11 +10,11 @@
     />
 
     <!-- Loading State -->
-    <div v-if="loading" class="loading-grid">
-      <div v-for="i in 3" :key="i" class="skeleton-card">
-        <SkeletonLoader height="80px" border-radius="var(--radius-md)" />
+    <div v-if="loading" class="services-grid">
+      <div v-for="i in 3" :key="i" class="loading-card">
+        <SkeletonLoader height="80px" border-radius="0.75rem" />
         <SkeletonLoader height="24px" width="70%" />
-        <SkeletonLoader height="36px" width="120px" border-radius="var(--radius-full)" />
+        <SkeletonLoader height="36px" width="120px" border-radius="9999px" />
       </div>
     </div>
 
@@ -47,12 +47,18 @@
     </div>
 
     <!-- Quick Actions -->
-    <section v-if="!loading && serviceEnabled && types.length" class="quick-actions">
-      <h3>My ID Card Requests</h3>
-      <p>View the status of your previous ID card service requests.</p>
-      <Button variant="secondary" @click="navigateToMyRequests">
-        View My Requests →
-      </Button>
+    <section v-if="!loading && serviceEnabled && types.length" class="quick-actions-section">
+      <div class="action-content">
+        <h3 class="action-title">My ID Card Requests</h3>
+        <p class="action-description">View the status of your previous ID card service requests, track approval progress, and view history.</p>
+        <Button variant="secondary" @click="navigateToMyRequests" class="action-button">
+          View My Requests →
+        </Button>
+      </div>
+      
+      <!-- Decorative background elements -->
+      <div class="deco-circle circle-1"></div>
+      <div class="deco-circle circle-2"></div>
     </section>
 
     <!-- Submit Request Modal -->
@@ -135,57 +141,116 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.loading-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-xl);
-}
-
-.skeleton-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
-  height: 200px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
 
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-xl);
+  grid-template-columns: repeat(1, 1fr);
+  gap: 24px; /* Consistent base gap */
+  margin-bottom: 40px;
 }
 
-.quick-actions {
-  margin-top: var(--spacing-2xl);
-  padding: var(--spacing-xl);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  text-align: center;
-}
-
-.quick-actions h3 {
-  margin: 0 0 var(--spacing-sm) 0;
-  color: var(--color-text-primary);
-}
-
-.quick-actions p {
-  margin: 0 0 var(--spacing-lg) 0;
-  color: var(--color-text-secondary);
-}
-
-@media (max-width: 1200px) {
-  .services-grid, .loading-grid {
+@media (min-width: 768px) {
+  .services-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 768px) {
-  .services-grid, .loading-grid {
-    grid-template-columns: 1fr;
+@media (min-width: 1100px) { /* Increased breakpoint for 3 columns */
+  .services-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px; /* Standard Spacious Gap */
   }
+}
+
+/* Loading Skeleton Matches Grid */
+.loading-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 300px; /* Approximate card height */
+}
+
+/* Refined Quick Actions (Footer Banner) */
+.quick-actions-section {
+  margin-top: 48px;
+  background: linear-gradient(135deg, white 0%, #f8fafc 100%); /* Subtle gradient */
+  border: 1px solid var(--color-border);
+  border-radius: 20px; /* Slightly more rounded than cards */
+  padding: 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); /* Soft floating shadow */
+}
+
+.action-content {
+  position: relative;
+  z-index: 10;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.action-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-textMain);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.action-description {
+  font-size: 15px;
+  color: var(--color-textSecondary);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.action-button {
+  background: white;
+  color: var(--color-primary);
+  border: 1px solid var(--color-borderLight);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 10px 24px;
+  font-weight: 600;
+  border-radius: 50px; /* Pill shape */
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: var(--color-primary);
+}
+
+/* Decorative Circles */
+.deco-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.circle-1 {
+  width: 300px;
+  height: 300px;
+  top: -100px;
+  right: -50px;
+  background: var(--color-primaryLight);
+  opacity: 0.15;
+}
+
+.circle-2 {
+  width: 250px;
+  height: 250px;
+  bottom: -80px;
+  left: -50px;
+  background: var(--color-infoBg);
+  opacity: 0.2;
 }
 </style>

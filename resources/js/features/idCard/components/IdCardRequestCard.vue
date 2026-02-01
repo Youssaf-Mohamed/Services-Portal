@@ -2,7 +2,7 @@
   <div class="request-card">
     <div class="card-header">
       <div class="type-info">
-        <div class="type-icon-wrapper" :style="{ background: iconBackground }">
+        <div class="type-icon-wrapper">
           <component :is="iconComponent" class="type-icon" />
         </div>
         <div>
@@ -14,6 +14,9 @@
         <span :class="['status-badge', request.status_color]">{{ request.status_label }}</span>
         <span :class="['payment-badge', paymentColor]">{{ paymentLabel }}</span>
       </div>
+      
+      <!-- Verified Watermark Stamp -->
+      <VerifiedSeal v-if="isReady || isDelivered" />
     </div>
     
     <div class="card-body">
@@ -33,8 +36,20 @@
         <strong>Rejection Reason:</strong>
         <p>{{ request.rejection_reason }}</p>
       </div>
+
+       <div v-if="request.payment_status === 'flagged' && request.payment_flag_reason" class="rejection-box" style="border-color: #f59e0b; background: rgba(245, 158, 11, 0.1);">
+        <strong style="color: #d97706;">Action Required:</strong>
+        <p>{{ request.payment_flag_reason }}</p>
+      </div>
+
+      <div v-if="request.status === 'rejected' || request.payment_status === 'flagged'" class="card-actions">
+        <Button variant="primary" size="sm" @click="$emit('resubmit', request)">
+          {{ request.payment_status === 'flagged' ? 'Fix Payment Info' : 'Resubmit Request' }}
+        </Button>
+      </div>
     </div>
 
+    <!-- Timeline Footer -->
     <div class="card-footer">
       <div class="timeline">
         <div :class="['timeline-step', { active: true }]">
@@ -60,7 +75,11 @@
 
 <script setup>
 import { computed } from 'vue';
+import VerifiedSeal from '@/features/transport/components/VerifiedSeal.vue'; // Reusing usage from transport feature as requested or making it shared
+import { Button } from '@/components/ui';
 import { CreditCard, Camera, Wrench, ClipboardList } from 'lucide-vue-next';
+
+defineEmits(['resubmit']);
 
 const props = defineProps({
   request: {
@@ -78,17 +97,6 @@ const iconComponent = computed(() => {
     damaged: Wrench
   };
   return icons[props.request.type.code] || ClipboardList;
-});
-
-const iconBackground = computed(() => {
-  const backgrounds = {
-    new: 'var(--color-primaryBg)',
-    renew: 'var(--color-infoBg)',
-    lost: 'var(--color-warningBg)',
-    photo_change: 'var(--color-successBg)',
-    damaged: 'var(--color-dangerBg)'
-  };
-  return backgrounds[props.request.type.code] || 'var(--color-surfaceHighlight)';
 });
 
 const paymentColor = computed(() => {
@@ -147,7 +155,11 @@ const isDelivered = computed(() => {
   align-items: flex-start;
   padding: var(--spacing-lg);
   border-bottom: 1px solid var(--color-border);
+  position: relative;
+  overflow: hidden;
 }
+
+/* Verified stamp styles moved to component */
 
 .type-info {
   display: flex;
@@ -155,14 +167,23 @@ const isDelivered = computed(() => {
   align-items: center;
 }
 
-.type-icon {
+
+.type-icon-wrapper {
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  border: 1px solid var(--color-borderLight);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  color: var(--color-primary);
+}
+
+.type-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .type-name {
@@ -264,6 +285,14 @@ const isDelivered = computed(() => {
   margin: var(--spacing-xs) 0 0;
   color: var(--color-text-secondary);
   font-size: 0.875rem;
+}
+
+.card-actions {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px dashed var(--color-border);
+  display: flex;
+  justify-content: flex-end;
 }
 
 .card-footer {

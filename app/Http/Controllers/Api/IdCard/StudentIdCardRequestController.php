@@ -136,4 +136,105 @@ class StudentIdCardRequestController extends Controller
             );
         }
     }
+    /**
+     * Update and resubmit a rejected ID card request.
+     */
+    /**
+     * Update and resubmit a rejected ID card request.
+     */
+    public function update(\App\Http\Requests\IdCard\UpdateIdCardRequestRequest $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        Log::info("Update Method Reached. Request ID provided: $id");
+
+        $type = $request->getResolvedType();
+
+        if (!$type) {
+            Log::warning("Type resolved to null");
+            return ApiResponse::error('Invalid service type', null, 422);
+        }
+        
+        $idCardRequest = IdCardRequest::where('user_id', $user->id)
+            ->where('id', $id)
+            ->first();
+            
+        if (!$idCardRequest) {
+            Log::warning("IdCardRequest not found for user {$user->id} and id $id");
+            return ApiResponse::error('Request not found', null, 404);
+        }
+
+        Log::info("Request found. Status: {$idCardRequest->status->value}, Payment: {$idCardRequest->payment_status->value}");
+        
+        // Allow updating if status is REJECTED or payment_status is FLAGGED
+        $canUpdate = $idCardRequest->status === RequestStatus::REJECTED || 
+                     $idCardRequest->payment_status === PaymentStatus::FLAGGED;
+
+        if (!$canUpdate) {
+            Log::warning("Cannot update. conditions failed.");
+            return ApiResponse::error('Only rejected requests or requests with flagged payments can be resubmitted.', null, 422);
+        }
+
+        try {
+            Log::info("Starting transaction...");
+            DB::transaction(function () use ($request, $user, $type, $idCardRequest) {
+                // Update screenshot if provided
+                $screenshotPath = $idCardRequest->transfer_screenshot_path;
+                if ($request->hasFile('transfer_screenshot')) {
+                    Log::info("Processing new screenshot file...");
+                    $screenshotPath = IdCardStorage::storeScreenshot(
+                        $request->file('transfer_screenshot'),
+                        $user->id
+                    );
+                }
+
+                // Update new photo if provided
+                $newPhotoPath = $idCardRequest->new_photo_path;
+                if ($request->hasFile('new_photo')) {
+                    Log::info("Processing new photo file...");
+                    $newPhotoPath = IdCardStorage::storeNewPhoto(
+                        $request->file('new_photo'),
+                        $user->id
+                    );
+                }
+
+                Log::info("Updating database record...");
+                // Update the request
+                $idCardRequest->update([
+                    'type_id' => $type->id,
+                    'status' => RequestStatus::PENDING->value,
+                    'amount_snapshot' => $type->fee, // Update fee in case type changed
+                    'transaction_number' => $request->transaction_number,
+                    'transfer_time' => $request->transfer_time,
+                    'transfer_screenshot_path' => $screenshotPath,
+                    'new_photo_path' => $newPhotoPath,
+                    'issue_description' => $request->issue_description,
+                    'payment_status' => PaymentStatus::PENDING->value, // Reset payment verification if changed
+                    'rejection_reason' => null,
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                    'payment_flag_reason' => null, // Clear flag reason
+                ]);
+            });
+
+            Log::info("Transaction committed.");
+
+            // Load type for response
+            $idCardRequest->load('type');
+
+            return ApiResponse::success(
+                new StudentIdCardRequestResource($idCardRequest),
+                'Request resubmitted successfully'
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update ID card request: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            return ApiResponse::error(
+                'Failed to resubmit request. Please try again.',
+                null,
+                500
+            );
+        }
+    }
 }

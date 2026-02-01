@@ -268,7 +268,6 @@ const toast = useToast();
 
 const tabs = [
     { id: 'general', label: 'General Configuration' },
-    { id: 'types', label: 'Service Types' },
     { id: 'payment', label: 'Payment Methods' },
 ];
 const currentTab = ref('general');

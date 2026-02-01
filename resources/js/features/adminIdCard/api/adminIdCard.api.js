@@ -310,5 +310,19 @@ export const adminIdCardApi = {
       console.error('adminIdCardApi.deleteType error:', error);
       throw new Error(error.response?.data?.message || 'Failed to delete type');
     }
+  },
+
+  /**
+   * Toggle ID card type active status.
+   * @param {number|string} id
+   */
+  async toggleTypeActive(id) {
+    try {
+      const response = await axios.post(`${BASE_URL}/types/${id}/toggle-active`);
+      return response.data;
+    } catch (error) {
+      console.error('adminIdCardApi.toggleTypeActive error:', error);
+      throw new Error(error.response?.data?.message || 'Failed to toggle type status');
+    }
   }
 };

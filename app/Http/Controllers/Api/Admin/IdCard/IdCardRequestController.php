@@ -473,6 +473,7 @@ class IdCardRequestController extends Controller
                 ->paymentStatus(PaymentStatus::PENDING)
                 ->count(),
             'flagged_payments' => IdCardRequest::paymentStatus(PaymentStatus::FLAGGED)->count(),
+            'total_revenue' => IdCardRequest::paymentStatus(PaymentStatus::VERIFIED)->sum('amount_snapshot'),
         ];
 
         return ApiResponse::success($stats);

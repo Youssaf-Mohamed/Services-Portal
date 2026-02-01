@@ -221,13 +221,7 @@ const fetchDashboard = async () => {
     loading.value = true;
     const response = await adminIdCardApi.getDashboard();
     stats.value = { ...stats.value, ...response.data };
-    
-    // Fallback: Estimate total revenue if the backend response omits it
-    // Assuming approx 150 EGP per request for now
-    if (!stats.value.total_revenue) {
-        const totalReqs = stats.value.pending + stats.value.approved + stats.value.ready_for_pickup + stats.value.delivered_today;
-        stats.value.total_revenue = totalReqs * 150; 
-    }
+    // Backend now provides total_revenue based on verified payments
 
   } catch (error) {
     console.error('Failed to load dashboard:', error);

@@ -9,6 +9,12 @@ const routes = [
     meta: { requiresGuest: true },
   },
   {
+    path: '/student',
+    name: 'StudentHome',
+    component: () => import('../views/student/StudentHome.vue'),
+    meta: { requiresAuth: true, requiresRole: 'student' },
+  },
+  {
     path: '/student/transport',
     name: 'StudentTransport',
     component: () => import('../features/transport/pages/TransportHome.vue'),
@@ -146,6 +152,12 @@ const routes = [
     meta: { requiresAuth: true, requiresRole: 'admin' },
   },
   {
+    path: '/admin/id-card/types',
+    name: 'AdminIdCardTypes',
+    component: () => import('../features/adminIdCard/pages/IdCardTypes.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin' },
+  },
+  {
     path: '/',
     redirect: '/login',
   },
@@ -176,7 +188,7 @@ router.beforeEach(async (to, from, next) => {
     if (role === 'admin') {
       return next('/admin');
     } else if (role === 'student') {
-      return next('/student/transport');
+      return next('/student');
     }
   }
 
@@ -193,7 +205,7 @@ router.beforeEach(async (to, from, next) => {
       if (role === 'admin') {
         return next('/admin');
       } else if (role === 'student') {
-        return next('/student/transport');
+        return next('/student');
       } else {
         return next('/login');
       }

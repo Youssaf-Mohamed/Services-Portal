@@ -2,7 +2,7 @@
   <div class="days-selector">
     <div class="selector-header">
       <h4>{{ label }}</h4>
-      <p class="help-text">Select exactly {{ allowedDays }} days</p>
+      <p class="help-text">يرجى تحديد {{ allowedDays }} أيام بالضبط</p>
     </div>
     
     <div class="days-grid">
@@ -98,7 +98,7 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .help-text {
-  font-size: var(--font-xs);
+  font-size: 11px;
   color: var(--color-textMuted);
   margin: var(--spacing-xs) 0 0 0;
 }

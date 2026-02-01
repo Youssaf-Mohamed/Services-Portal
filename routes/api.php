@@ -116,7 +116,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/settings', [IdCardSettingController::class, 'show']);
             Route::put('/settings', [IdCardSettingController::class, 'update']);
             Route::apiResource('payment-methods', PaymentMethodController::class);
-            Route::apiResource('types', \App\Http\Controllers\Api\IdCard\AdminIdCardTypeController::class);
+            Route::apiResource('types', \App\Http\Controllers\Api\Admin\IdCard\IdCardTypeController::class);
+            Route::post('/types/{idCardType}/toggle-active', [\App\Http\Controllers\Api\Admin\IdCard\IdCardTypeController::class, 'toggleActive']);
         });
     });
 
@@ -138,6 +139,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Subscription request submission
         Route::post('/subscription-requests', [StudentTransportRequestController::class, 'store']);
+        Route::post('/subscription-requests/{id}', [StudentTransportRequestController::class, 'update']); // Update/Resubmit
 
         // Student status endpoints
         Route::get('/my-requests', [StudentTransportStatusController::class, 'myRequests']);
@@ -153,6 +155,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Request submission
         Route::post('/requests', [StudentIdCardRequestController::class, 'store']);
+        Route::post('/requests/{id}', [StudentIdCardRequestController::class, 'update']); // Update/Resubmit
 
         // My requests
         Route::get('/my-requests', [StudentIdCardRequestController::class, 'index']);

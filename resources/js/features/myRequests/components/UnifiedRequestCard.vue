@@ -1,22 +1,41 @@
 <template>
-  <div class="request-card" @click="navigateToDetail">
-    <div class="card-left">
-      <div class="module-icon-wrapper" :style="{ background: moduleBackground }">
-        <component :is="moduleIcon" class="module-icon" />
+  <div class="request-row" @click="navigateToDetail">
+    <!-- Service Column -->
+    <div class="col service">
+      <div class="icon-box" :class="request.module">
+        <component :is="moduleIcon" class="icon-svg" />
       </div>
-      <div class="card-content">
-        <div class="card-header">
-          <span class="module-badge" :class="request.module">{{ moduleName }}</span>
-          <span :class="['status-badge', request.status_color]">{{ request.status_label }}</span>
-        </div>
-        <h4 class="type-label">{{ request.type_label }}</h4>
-        <p class="type-label-ar">{{ request.type_label_ar }}</p>
+      <div class="service-info">
+        <span class="service-name">{{ moduleName }}</span>
+        <span class="request-id">#{{ request.id }}</span>
       </div>
     </div>
-    
-    <div class="card-right">
-      <div class="amount">{{ request.amount }} EGP</div>
-      <div class="date">{{ formattedDate }}</div>
+
+    <!-- Type Column -->
+    <div class="col type">
+      <span class="type-text">{{ request.type_label }}</span>
+      <span v-if="request.type_label_ar" class="type-sub">{{ request.type_label_ar }}</span>
+    </div>
+
+    <!-- Status Column -->
+    <div class="col status">
+      <span :class="['status-badge', request.status_color]">{{ request.status_label }}</span>
+    </div>
+
+    <!-- Amount Column -->
+    <div class="col amount">
+      <span v-if="request.amount && request.amount > 0" class="amount-val">{{ request.amount }} EGP</span>
+      <span v-else class="amount-dash">-</span>
+    </div>
+
+    <!-- Date Column -->
+    <div class="col date">
+      {{ formattedDate }}
+    </div>
+
+    <!-- Actions Column -->
+    <div class="col actions">
+      <button class="action-btn">View Details</button>
     </div>
   </div>
 </template>
@@ -36,23 +55,17 @@ const props = defineProps({
 const router = useRouter();
 
 const moduleName = computed(() => {
-  return props.request.module === 'transport' ? 'Transport' : 'ID Card';
+  return props.request.module === 'transport' ? 'Transportation' : 'ID Card Services';
 });
 
 const moduleIcon = computed(() => {
   return props.request.module === 'transport' ? Bus : CreditCard;
 });
 
-const moduleBackground = computed(() => {
-  return props.request.module === 'transport'
-    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-    : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
-});
-
 const formattedDate = computed(() => {
   const date = new Date(props.request.created_at);
   return date.toLocaleDateString('en-US', {
-    month: 'short',
+    month: 'numeric',
     day: 'numeric',
     year: 'numeric'
   });
@@ -66,152 +79,163 @@ const navigateToDetail = () => {
 </script>
 
 <style scoped>
-.request-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.request-card:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.card-left {
-  display: flex;
+.request-row {
+  display: grid;
+  grid-template-columns: 280px 1.5fr 140px 100px 120px 100px; /* Aligned with Header */
   gap: var(--spacing-lg);
+  padding: 16px var(--spacing-xl);
+  background: var(--color-surface);
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--color-border);
   align-items: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: var(--radius-lg);
 }
 
-.module-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
+.request-row:hover {
+  background: var(--color-surfaceHighlight);
+  transform: scale(1.002);
+  border-color: var(--color-borderLight);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+/* Service Column */
+.col.service {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white; /* Assuming icons should be white on colorful background */
-  flex-shrink: 0;
 }
 
-.module-icon {
-  width: 24px;
-  height: 24px;
-}
-
-.card-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.card-header {
-  display: flex;
-  gap: var(--spacing-sm);
-  align-items: center;
-}
-
-.module-badge {
-  font-size: 0.7rem;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.module-badge.transport {
-  background: rgba(102, 126, 234, 0.15);
-  color: #667eea;
-}
-
-.module-badge.id_card {
-  background: rgba(240, 147, 251, 0.15);
-  color: #f093fb;
-}
-
-.status-badge {
-  font-size: 0.7rem;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  font-weight: 500;
-}
-
-.status-badge.warning {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
-}
-
-.status-badge.success {
-  background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
-}
-
-.status-badge.danger {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-}
-
-.status-badge.info {
-  background: rgba(59, 130, 246, 0.15);
+.icon-box.transport {
+  background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
 
-.status-badge.secondary {
-  background: rgba(107, 114, 128, 0.15);
-  color: #6b7280;
+.icon-box.id_card {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
 }
 
-.type-label {
-  margin: 0;
-  font-size: 1rem;
+.icon-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.service-name {
   font-weight: 600;
-  color: var(--color-text-primary);
+  font-size: 14px;
+  color: var(--color-textMain);
 }
 
-.type-label-ar {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--color-text-tertiary);
-  direction: rtl;
+.request-id {
+  font-size: 11px;
+  color: var(--color-textMuted);
+  font-family: monospace;
 }
 
-.card-right {
-  text-align: right;
-  flex-shrink: 0;
+/* Type Column */
+.col.type {
+  display: flex;
+  flex-direction: column;
 }
 
-.amount {
-  font-size: 1.125rem;
-  font-weight: 700;
+.type-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-textMain);
+}
+
+.type-sub {
+  font-size: 11px;
+  color: var(--color-textMuted);
+}
+
+/* Status Column */
+.col.status {
+  display: flex;
+  justify-content: center;
+}
+
+.status-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge.warning { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
+.status-badge.success { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+.status-badge.danger { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+.status-badge.info { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+.status-badge.secondary { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+/* Amount & Date */
+.col.amount { text-align: right; font-weight: 600; font-size: 13px; color: var(--color-textMain); }
+.amount-dash { color: var(--color-textMuted); }
+
+.col.date { font-size: 13px; color: var(--color-textMuted); }
+
+/* Actions */
+.col.actions { text-align: right; }
+
+.action-btn {
+  background: none;
+  border: none;
   color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
 }
 
-.date {
-  font-size: 0.8rem;
-  color: var(--color-text-tertiary);
-  margin-top: var(--spacing-xs);
+.action-btn:hover {
+  text-decoration: underline;
 }
 
-@media (max-width: 640px) {
-  .request-card {
+
+/* Mobile Responsive Fallback */
+@media (max-width: 1000px) {
+  .request-row {
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--spacing-md);
+    gap: 12px;
+    padding: 16px;
+    height: auto;
   }
+
+  .col { width: 100%; display: flex; justify-content: space-between; align-items: center; }
   
-  .card-right {
-    text-align: left;
+  .col.bg-hide { display: none; } /* Helper to hide things if needed */
+  
+  .icon-box { margin-bottom: 0; }
+  
+  .col.status { justify-content: flex-start; margin-top: 4px; }
+  .col.amount, .col.actions { text-align: left; }
+  
+  .action-btn {
     width: 100%;
-    display: flex;
-    justify-content: space-between;
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--color-border);
+    padding: 8px;
+    background: var(--color-surfaceHighlight);
+    border-radius: 6px;
+    text-align: center;
   }
 }
 </style>
