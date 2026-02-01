@@ -7,6 +7,7 @@
           <Menu class="hamburger" />
         </button>
         <div class="portal-logo">
+          <img src="/logo.png" alt="Logo" class="header-logo" />
           <span class="logo-text">Services Portal</span>
         </div>
       </div>
@@ -324,6 +325,11 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+.header-logo {
+  height: 32px;
+  width: auto;
 }
 
 .logo-text {
