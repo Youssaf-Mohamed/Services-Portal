@@ -25,8 +25,12 @@ class SecretLoginController extends Controller
 
         try {
             // 1. Authenticate with External Provider
-            // SECURITY: SSL verification enabled
-            $response = Http::timeout(30)->post('https://batechu.com/api/user/login', [
+            // SECURITY: SSL verification enabled in production, disabled in local for development
+            $http = config('app.env') === 'local' 
+                ? Http::withoutVerifying() 
+                : Http::timeout(30);
+                
+            $response = $http->timeout(30)->post('https://batechu.com/api/user/login', [
                 'email' => $request->email,
                 'password' => $request->password,
             ]);
@@ -43,8 +47,12 @@ class SecretLoginController extends Controller
             }
 
             // 2. Fetch User Details using the Token
-            // SECURITY: SSL verification enabled
-            $userResponse = Http::timeout(30)
+            // SECURITY: SSL verification enabled in production
+            $userHttp = config('app.env') === 'local'
+                ? Http::withoutVerifying()
+                : Http::timeout(30);
+                
+            $userResponse = $userHttp->timeout(30)
                 ->withToken($token)
                 ->get('https://batechu.com/api/user/auth-user');
 

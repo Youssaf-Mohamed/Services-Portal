@@ -120,7 +120,7 @@ class StudentTransportRequestController extends Controller
         
         // NEW: Check slot capacity BEFORE accepting the request
         if ($request->filled('slot_id')) {
-            $slot = \App\Models\TransportSlot::find($request->slot_id);
+            $slot = \App\Models\BusScheduleSlot::find($request->slot_id);
             
             if (!$slot) {
                 return ApiResponse::error('Selected time slot not found', null, 404);
@@ -273,7 +273,7 @@ class StudentTransportRequestController extends Controller
         // Handle Slot Logic
         // For update, we might keep the old slot if not changed, but here we validate it again
         if ($request->filled('slot_id')) {
-            $slot = \App\Models\TransportSlot::find($request->slot_id);
+            $slot = \App\Models\BusScheduleSlot::find($request->slot_id);
             
             if (!$slot) {
                 return ApiResponse::error('Selected time slot not found', null, 404);

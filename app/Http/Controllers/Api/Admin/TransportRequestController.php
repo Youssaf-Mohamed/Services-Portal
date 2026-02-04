@@ -74,15 +74,6 @@ class TransportRequestController extends Controller
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
-        // Search by student name or email
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
         // Order by created_at desc (newest first)
         $query->orderBy('created_at', 'desc');
 
@@ -158,15 +149,26 @@ class TransportRequestController extends Controller
                 $endDate = $startDate->copy()->addDays($weeks * 7 - 1);
 
                 // Check capacity (Only if slot exists)
+                // CRITICAL FIX: Add pessimistic locking to prevent race conditions
                 $capacityRemaining = null;
                 $isWaitlisted = false;
-                if ($subscriptionRequest->slot_id && $subscriptionRequest->slot) {
-                    $slot = $subscriptionRequest->slot;
+                if ($subscriptionRequest->slot_id) {
+                    // Lock slot row until transaction commits (prevents concurrent approvals)
+                    $slot = BusScheduleSlot::lockForUpdate()->find($subscriptionRequest->slot_id);
+                    
+                    if (!$slot) {
+                        throw new \Exception('Slot not found');
+                    }
+                    
+                    // Also lock reservations to get accurate count
                     $activeReservationsCount = TransportSeatReservation::where('slot_id', $slot->id)
                         ->whereNull('released_at')
+                        ->lockForUpdate()
                         ->count();
+                    
                     $capacityRemaining = $slot->capacity - $activeReservationsCount;
-                    $isWaitlisted = $capacityRemaining <= 0;
+                    // Standardized logic: < 1 instead of <= 0
+                    $isWaitlisted = $capacityRemaining < 1;
                 }
 
                 // Create subscription
@@ -323,14 +325,23 @@ class TransportRequestController extends Controller
                         $endDate = $startDate->copy()->addDays($weeks * 7 - 1);
 
                         // Check capacity (Only if slot exists)
+                        // CRITICAL FIX: Add pessimistic locking to prevent race conditions
                         $isWaitlisted = false;
-                        if ($subscriptionRequest->slot_id && $subscriptionRequest->slot) {
-                            $slot = $subscriptionRequest->slot;
+                        if ($subscriptionRequest->slot_id) {
+                            // Lock slot row until transaction commits
+                            $slot = BusScheduleSlot::lockForUpdate()->find($subscriptionRequest->slot_id);
+                            
+                            if (!$slot) {
+                                throw new \Exception('Slot not found');
+                            }
+                            
                             $activeReservationsCount = TransportSeatReservation::where('slot_id', $slot->id)
                                 ->whereNull('released_at')
+                                ->lockForUpdate()
                                 ->count();
+                            
                             $capacityRemaining = $slot->capacity - $activeReservationsCount;
-                            $isWaitlisted = $capacityRemaining <= 0;
+                            $isWaitlisted = $capacityRemaining < 1;
                         }
 
                         // Create subscription
@@ -539,4 +550,106 @@ class TransportRequestController extends Controller
             'payment_flag_reason' => $request->reason,
         ], 'Payment flagged for review');
     }
+
+    /**
+     * Export transport bookings to Excel.
+     */
+    public function export(Request $request)
+    {
+        $request->validate([
+            'status' => 'nullable|string',
+            'route_id' => 'nullable|integer',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date',
+        ]);
+
+        $filename = 'transport_bookings_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\TransportBookingsExport(
+                $request->status,
+                $request->route_id,
+                $request->from_date,
+                $request->to_date
+            ),
+            $filename
+        );
+    }
+
+    /**
+     * Get slot capacity analytics (available seats per day/slot).
+     */
+    public function slotCapacity(Request $request)
+    {
+        $routeId = $request->get('route_id');
+        
+        $query = \App\Models\BusScheduleSlot::with(['route', 'activeReservations'])
+            ->where('active', true);
+        
+        if ($routeId) {
+            $query->where('route_id', $routeId);
+        }
+        
+        $slots = $query->get()->map(function ($slot) {
+            $activeCount = $slot->activeReservations()->count();
+            $available = $slot->capacity - $activeCount;
+            
+            return [
+                'slot_id' => $slot->id,
+                'route_id' => $slot->route_id,
+                'route_name' => $slot->route->name_en ?? 'N/A',
+                'day_of_week' => $slot->day_of_week,
+                'day_name' => $this->getDayName($slot->day_of_week),
+                'time' => date('h:i A', strtotime($slot->time)),
+                'direction' => $slot->direction,
+                'total_capacity' => $slot->capacity,
+                'reserved_seats' => $activeCount,
+                'available_seats' => max(0, $available),
+                'utilization_percent' => $slot->capacity > 0 
+                    ? round(($activeCount / $slot->capacity) * 100, 1)
+                    : 0,
+                'status' => $available > 0 ? 'available' : 'full',
+            ];
+        });
+        
+        // Group by day of week for easy viewing
+        $byDay = $slots->groupBy('day_of_week')->map(function ($daySlots, $day) {
+            return [
+                'day_number' => $day,
+                'day_name' => $this->getDayName($day),
+                'slots' => $daySlots->values(),
+                'total_capacity' => $daySlots->sum('total_capacity'),
+                'total_reserved' => $daySlots->sum('reserved_seats'),
+                'total_available' => $daySlots->sum('available_seats'),
+            ];
+        })->values();
+        
+        return ApiResponse::success([
+            'slots' => $slots,
+            'by_day' => $byDay,
+            'summary' => [
+                'total_slots' => $slots->count(),
+                'total_capacity' => $slots->sum('total_capacity'),
+                'total_reserved' => $slots->sum('reserved_seats'),
+                'total_available' => $slots->sum('available_seats'),
+                'average_utilization' => $slots->avg('utilization_percent'),
+            ],
+        ]);
+    }
+
+    private function getDayName($dayNumber)
+    {
+        $days = [
+            0 => 'Sunday',
+            1 => 'Monday',
+            2 => 'Tuesday',
+            3 => 'Wednesday',
+            4 => 'Thursday',
+            5 => 'Friday',
+            6 => 'Saturday',
+        ];
+
+        return $days[$dayNumber] ?? 'Unknown';
+    }
 }
+

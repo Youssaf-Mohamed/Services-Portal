@@ -38,8 +38,12 @@ class SSOController extends Controller
         ]);
 
         try {
-            // SECURITY: SSL verification enabled (CRITICAL FIX)
-            $response = Http::timeout(30)->withToken($token)->get('https://batechu.com/api/student/user');
+            // SECURITY: SSL verification enabled in production, disabled in local
+            $http = config('app.env') === 'local'
+                ? Http::withoutVerifying()
+                : Http::timeout(30);
+                
+            $response = $http->timeout(30)->withToken($token)->get('https://batechu.com/api/student/user');
 
             if ($response->successful()) {
                 $data = $response->json();

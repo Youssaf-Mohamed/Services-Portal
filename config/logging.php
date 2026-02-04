@@ -129,6 +129,20 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
         ],
 
+        'security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/security.log'),
+            'level' => 'info',
+            'days' => 90, // Keep security logs for 90 days
+        ],
+
+        'audit' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/audit.log'),
+            'level' => 'info',
+            'days' => 180, // Keep audit logs for 180 days (compliance)
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
