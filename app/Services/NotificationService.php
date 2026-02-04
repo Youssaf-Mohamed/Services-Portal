@@ -146,6 +146,22 @@ class NotificationService
     }
 
     /**
+     * Alerts the student that their transport payment proof has been verified.
+     */
+    public function notifyTransportPaymentVerified(User $student, int $requestId): Notification
+    {
+        return $this->notify(
+            $student,
+            'transport_payment_verified',
+            'Payment Verified',
+            'Your transport payment proof has been verified. You will be notified once the request is approved.',
+            "/student/transport/my-requests"
+        );
+    }
+
+
+
+    /**
      * Sends a notification to the student confirming their ID card request submission.
      */
     public function notifyIdCardRequestSubmitted(User $student, int $requestId): Notification

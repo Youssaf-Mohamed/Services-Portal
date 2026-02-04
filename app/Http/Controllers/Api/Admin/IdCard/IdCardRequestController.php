@@ -479,3 +479,4 @@ class IdCardRequestController extends Controller
         return ApiResponse::success($stats);
     }
 }
+

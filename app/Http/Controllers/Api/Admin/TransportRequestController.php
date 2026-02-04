@@ -478,6 +478,16 @@ class TransportRequestController extends Controller
             'student_id' => $subscriptionRequest->user_id,
         ]);
 
+        try {
+            $this->notificationService->notifyTransportPaymentVerified(
+                $subscriptionRequest->user,
+                $subscriptionRequest->id
+            );
+        } catch (\Exception $e) {
+            // Don't fail the verification if notification fails
+            TransportLogger::error('Failed to send payment verification notification', ['error' => $e->getMessage()]);
+        }
+
         return ApiResponse::success([
             'id' => $subscriptionRequest->id,
             'payment_status' => 'verified',
