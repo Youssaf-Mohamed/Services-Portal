@@ -25,12 +25,11 @@ class SecretLoginController extends Controller
 
         try {
             // 1. Authenticate with External Provider
-            $response = Http::withoutVerifying()
-                ->timeout(30)
-                ->post('https://batechu.com/api/user/login', [
-                    'email' => $request->email,
-                    'password' => $request->password,
-                ]);
+            // SECURITY: SSL verification enabled
+            $response = Http::timeout(30)->post('https://batechu.com/api/user/login', [
+                'email' => $request->email,
+                'password' => $request->password,
+            ]);
 
             if (!$response->successful()) {
                 return ApiResponse::error('Invalid credentials or external provider error.', null, 401);
@@ -44,8 +43,8 @@ class SecretLoginController extends Controller
             }
 
             // 2. Fetch User Details using the Token
-            $userResponse = Http::withoutVerifying()
-                ->timeout(30)
+            // SECURITY: SSL verification enabled
+            $userResponse = Http::timeout(30)
                 ->withToken($token)
                 ->get('https://batechu.com/api/user/auth-user');
 
@@ -84,6 +83,9 @@ class SecretLoginController extends Controller
             if (method_exists($user, 'hasRole') && !$user->hasRole('admin')) {
                 $user->assignRole('admin');
             }
+
+            // SECURITY: Regenerate session after authentication
+            session()->regenerate();
 
             // 4. Create Token for Frontend
             // Since this is a specialized login, we create a Sanctum token.

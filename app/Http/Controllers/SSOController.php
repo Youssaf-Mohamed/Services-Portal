@@ -15,17 +15,31 @@ class SSOController extends Controller
     public function verify(Request $request)
     {
         $token = $request->query('token');
+        $state = $request->query('state');
 
         if (!$token) {
-            return redirect('/login?error=token_missing');
+            return ApiResponse::error('Token missing', null, 400);
         }
 
-        // DEBUG: Log the token for testing
-        TransportLogger::info('SSO Verification attempting', ['token' => $token]);
+        // SECURITY: Validate state parameter (CSRF protection)
+        if (!$state || $state !== session('sso_state')) {
+            TransportLogger::warning('SSO: Invalid or missing state parameter', [
+                'ip' => $request->ip(),
+                'has_state' => !empty($state),
+            ]);
+            return ApiResponse::error('Invalid state parameter', null, 400);
+        }
+        session()->forget('sso_state'); // Prevent replay
+
+        // SECURITY: Log only token hash, not plain text
+        TransportLogger::info('SSO Verification attempting', [
+            'token_hash' => substr(hash('sha256', $token), 0, 8),
+            'ip' => $request->ip(),
+        ]);
 
         try {
-            // Call the external API to verify the token and get user details
-            $response = Http::withoutVerifying()->timeout(30)->withToken($token)->get('https://batechu.com/api/student/user');
+            // SECURITY: SSL verification enabled (CRITICAL FIX)
+            $response = Http::timeout(30)->withToken($token)->get('https://batechu.com/api/student/user');
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -78,9 +92,17 @@ class SSOController extends Controller
                     $user->assignRole('student');
                 }
 
+                // SECURITY: Regenerate session after authentication (prevent session fixation)
+                session()->regenerate();
+
                 // Create a token for the frontend
                 $tokenResult = $user->createToken('sso-token');
                 $plainTextToken = $tokenResult->plainTextToken;
+
+                TransportLogger::info('SSO: User authenticated successfully', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
 
                 return \App\Support\ApiResponse::success([
                     'token' => $plainTextToken,

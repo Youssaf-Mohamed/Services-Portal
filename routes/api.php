@@ -35,7 +35,8 @@ Route::middleware(['test.mode', 'throttle:login'])->prefix('auth')->group(functi
 
 Route::post('/sso/secret-login', [\App\Http\Controllers\Admin\SecretLoginController::class, 'login']);
 
-Route::get('/sso/verify', [\App\Http\Controllers\SSOController::class, 'verify']);
+// SECURITY: SSO verification with rate limiting
+Route::middleware('throttle:sso')->get('/sso/verify', [\App\Http\Controllers\SSOController::class, 'verify']);
 
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -152,8 +153,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/settings', [StudentTransportController::class, 'settings']);
         Route::get('/plans', [TransportPlanController::class, 'index']);
 
-        // Subscription request submission
-        Route::post('/subscription-requests', [StudentTransportRequestController::class, 'store']);
+        // Subscription request submission (with rate limiting)
+        Route::middleware('throttle:uploads')->post('/subscription-requests', [StudentTransportRequestController::class, 'store']);
         Route::post('/subscription-requests/{id}', [StudentTransportRequestController::class, 'update']); // Update/Resubmit
 
         // Student status endpoints
@@ -168,8 +169,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/settings', [StudentIdCardController::class, 'settings']);
         Route::get('/payment-methods', [StudentIdCardController::class, 'paymentMethods']);
 
-        // Request submission
-        Route::post('/requests', [StudentIdCardRequestController::class, 'store']);
+        // Request submission (with rate limiting)
+        Route::middleware('throttle:uploads')->post('/requests', [StudentIdCardRequestController::class, 'store']);
         Route::post('/requests/{id}', [StudentIdCardRequestController::class, 'update']); // Update/Resubmit
 
         // My requests

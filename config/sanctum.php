@@ -44,9 +44,11 @@ return [
     | considered expired. This will override any values set in the token's
     | "expires_at" attribute, but first-party sessions are not affected.
     |
+    | SECURITY: Tokens expire after 24 hours (1440 minutes)
+    |
     */
 
-    'expiration' => null,
+    'expiration' => 60 * 24, // 24 hours
 
     /*
     |--------------------------------------------------------------------------
