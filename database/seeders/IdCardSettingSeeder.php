@@ -17,7 +17,7 @@ class IdCardSettingSeeder extends Seeder
             [
                 'payment_account_number' => '1234567890',
                 'payment_account_name' => 'University Card Services',
-                'payment_instructions' => 'Please transfer the exact amount to the account above and upload a screenshot of the transfer confirmation.',
+                'payment_instructions' => 'يرجى تحويل المبلغ المطلوب بدقة إلى الحساب الموضح أعلاه وإرفاق صورة من إيصال التحويل.',
                 'service_enabled' => true,
             ]
         );

@@ -23,7 +23,7 @@ class PaymentMethodsSeeder extends Seeder
             [
                 'name' => 'Bank Transfer',
                 'account_number' => 'EG380001234567890123456789',
-                'instructions' => 'Account Name: University Transport Services. Bank: National Bank of Egypt. Please include your student ID in transfer notes.',
+                'instructions' => 'اسم الحساب: خدمات النقل الجامعي. البنك: البنك الأهلي المصري. يرجى ذكر الرقم الجامعي في ملاحظات التحويل.',
                 'active' => true,
             ],
         ];
