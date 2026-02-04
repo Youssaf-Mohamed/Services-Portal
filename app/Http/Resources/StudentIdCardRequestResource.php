@@ -24,6 +24,7 @@ class StudentIdCardRequestResource extends JsonResource
             'status_color' => $this->status->color(),
             'amount' => (float) $this->amount_snapshot,
             'transaction_number' => $this->transaction_number,
+            'paid_from_number' => $this->paid_from_number,
             'transfer_time' => $this->transfer_time?->toIso8601String(),
             'payment_status' => $this->payment_status->value,
             'payment_status_label' => $this->payment_status->label(),

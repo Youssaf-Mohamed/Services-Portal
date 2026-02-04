@@ -63,6 +63,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/dashboard', [TransportDashboardController::class, 'dashboard']);
             Route::get('/manifest', [TransportDashboardController::class, 'manifest']);
 
+        });
+
+        // Announcmements
+        Route::apiResource('announcements', \App\Http\Controllers\Api\Admin\AnnouncementController::class);
+
+        // Admin Transport Management
+        Route::prefix('transport')->group(function () {
+
             // Reports / Exports
             Route::get('/reports/active-subscriptions', [\App\Http\Controllers\Api\Admin\ReportsController::class, 'exportActiveSubscriptions']);
             Route::get('/reports/waitlist', [\App\Http\Controllers\Api\Admin\ReportsController::class, 'exportWaitlist']);
@@ -128,6 +136,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Student routes
     Route::middleware('role:student')->prefix('student')->group(function () {
         Route::get('/ping', [StudentController::class, 'ping']);
+        
+        // Announcements
+        Route::get('/announcements', [\App\Http\Controllers\Api\Student\AnnouncementController::class, 'index']);
 
         // Unified My Requests (all modules)
         Route::get('/my-requests', [UnifiedRequestsController::class, 'index']);

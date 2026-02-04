@@ -15,6 +15,7 @@ class IdCardRequest extends Model
         'status',
         'amount_snapshot',
         'transaction_number',
+        'paid_from_number',
         'transfer_time',
         'transfer_screenshot_path',
         'new_photo_path',

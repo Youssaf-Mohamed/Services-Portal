@@ -45,6 +45,7 @@ class IdCardRequestDetailResource extends JsonResource
             // Payment info
             'payment' => [
                 'transaction_number' => $this->transaction_number,
+                'paid_from_number' => $this->paid_from_number,
                 'transfer_time' => $this->transfer_time?->toIso8601String(),
                 'status' => $this->payment_status->value,
                 'status_label' => $this->payment_status->label(),

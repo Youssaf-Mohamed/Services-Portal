@@ -517,6 +517,12 @@ class TransportRequestController extends Controller
             'reason' => $request->reason,
         ]);
 
+        $this->notificationService->notifyTransportPaymentFlagged(
+            $subscriptionRequest->user,
+            $subscriptionRequest->id,
+            $request->reason
+        );
+
         return ApiResponse::success([
             'id' => $subscriptionRequest->id,
             'payment_status' => 'flagged',

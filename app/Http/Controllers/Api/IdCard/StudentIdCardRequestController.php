@@ -94,6 +94,7 @@ class StudentIdCardRequestController extends Controller
                     'status' => RequestStatus::PENDING->value,
                     'amount_snapshot' => $type->fee,
                     'transaction_number' => $request->transaction_number,
+                    'paid_from_number' => $request->paid_from_number,
                     'transfer_time' => $request->transfer_time,
                     'transfer_screenshot_path' => $screenshotPath,
                     'new_photo_path' => $newPhotoPath,
@@ -204,6 +205,7 @@ class StudentIdCardRequestController extends Controller
                     'status' => RequestStatus::PENDING->value,
                     'amount_snapshot' => $type->fee, // Update fee in case type changed
                     'transaction_number' => $request->transaction_number,
+                    'paid_from_number' => $request->paid_from_number,
                     'transfer_time' => $request->transfer_time,
                     'transfer_screenshot_path' => $screenshotPath,
                     'new_photo_path' => $newPhotoPath,

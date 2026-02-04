@@ -40,6 +40,12 @@ class StoreIdCardRequestRequest extends FormRequest
                 'min:3',
                 'max:50',
             ],
+            'paid_from_number' => [
+                'required',
+                'string',
+                'min:11',
+                'max:15',
+            ],
             'transfer_time' => [
                 'required',
                 'date',

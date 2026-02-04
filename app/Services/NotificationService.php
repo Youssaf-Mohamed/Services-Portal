@@ -118,6 +118,20 @@ class NotificationService
     }
 
     /**
+     * Alerts the student that their transport payment proof has been flagged.
+     */
+    public function notifyTransportPaymentFlagged(User $student, int $requestId, string $reason): Notification
+    {
+        return $this->notify(
+            $student,
+            'transport_payment_flagged',
+            'Payment Flagged',
+            "Your transport payment proof has been flagged. Reason: {$reason}. Please review and update.",
+            "/student/transport/my-requests"
+        );
+    }
+
+    /**
      * Alerts admins that a payment proof has been flagged for review.
      */
     public function notifyPaymentFlagged(User $admin, int $requestId, string $studentName): Notification
