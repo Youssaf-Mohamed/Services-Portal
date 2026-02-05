@@ -9,27 +9,17 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Support\TransportLogger;
+use App\Support\ApiResponse;
 
 class SSOController extends Controller
 {
     public function verify(Request $request)
     {
         $token = $request->query('token');
-        $state = $request->query('state');
 
         if (!$token) {
             return ApiResponse::error('Token missing', null, 400);
         }
-
-        // SECURITY: Validate state parameter (CSRF protection)
-        if (!$state || $state !== session('sso_state')) {
-            TransportLogger::warning('SSO: Invalid or missing state parameter', [
-                'ip' => $request->ip(),
-                'has_state' => !empty($state),
-            ]);
-            return ApiResponse::error('Invalid state parameter', null, 400);
-        }
-        session()->forget('sso_state'); // Prevent replay
 
         // SECURITY: Log only token hash, not plain text
         TransportLogger::info('SSO Verification attempting', [

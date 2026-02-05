@@ -47,6 +47,19 @@ class TransportLogger
     }
 
     /**
+     * Log a warning message.
+     */
+    public static function warning(string $message, array $context = []): void
+    {
+        Log::channel('transport')->warning($message, array_merge([
+            'admin_id' => auth()->id(),
+            'admin_email' => auth()->user()?->email,
+            'timestamp' => now()->toIso8601String(),
+            'ip' => request()->ip(),
+        ], $context));
+    }
+
+    /**
      * Log a payment verification action.
      */
     public static function logPaymentVerified(int $requestId, int $studentId): void
