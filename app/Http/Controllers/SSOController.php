@@ -107,7 +107,16 @@ class SSOController extends Controller
                     'status' => $response->status(),
                     'body' => $response->body()
                 ]);
-                return \App\Support\ApiResponse::error('Provider verification failed');
+
+                // Attempt to decode provider body, fallback to raw body
+                try {
+                    $providerBody = $response->json();
+                } catch (\Exception $e) {
+                    $providerBody = $response->body();
+                }
+
+                // Return provider status and body to the frontend for better diagnostics
+                return \App\Support\ApiResponse::error('Provider verification failed', $providerBody, $response->status());
             }
 
         } catch (\Exception $e) {
