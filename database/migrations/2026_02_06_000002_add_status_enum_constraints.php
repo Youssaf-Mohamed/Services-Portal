@@ -16,71 +16,36 @@ return new class extends Migration
         // ═══════════════════════════════════════════════════════════════
 
         // Transport subscription requests
-        DB::statement("
-            UPDATE transport_subscription_requests 
-            SET status = 'pending' 
-            WHERE status NOT IN ('pending', 'approved', 'rejected', 'cancelled')
-        ");
+        DB::statement("\n            UPDATE transport_subscription_requests \n            SET status = 'pending' \n            WHERE status NOT IN ('pending', 'approved', 'rejected', 'cancelled')\n        ");
 
-        DB::statement("
-            UPDATE transport_subscription_requests 
-            SET payment_status = 'pending' 
-            WHERE payment_status NOT IN ('pending', 'verified', 'flagged')
-        ");
+        DB::statement("\n            UPDATE transport_subscription_requests \n            SET payment_status = 'pending' \n            WHERE payment_status NOT IN ('pending', 'verified', 'flagged')\n        ");
 
         // Transport subscriptions
-        DB::statement("
-            UPDATE transport_subscriptions 
-            SET status = 'active' 
-            WHERE status NOT IN ('active', 'waitlisted', 'expired', 'cancelled')
-        ");
+        DB::statement("\n            UPDATE transport_subscriptions \n            SET status = 'active' \n            WHERE status NOT IN ('active', 'waitlisted', 'expired', 'cancelled')\n        ");
 
         // ID card requests
-        DB::statement("
-            UPDATE id_card_requests 
-            SET status = 'pending' 
-            WHERE status NOT IN ('pending', 'approved', 'rejected', 'ready_for_pickup', 'delivered', 'cancelled')
-        ");
+        DB::statement("\n            UPDATE id_card_requests \n            SET status = 'pending' \n            WHERE status NOT IN ('pending', 'approved', 'rejected', 'ready_for_pickup', 'delivered', 'cancelled')\n        ");
 
-        DB::statement("
-            UPDATE id_card_requests 
-            SET payment_status = 'pending' 
-            WHERE payment_status NOT IN ('pending', 'verified', 'flagged')
-        ");
+        DB::statement("\n            UPDATE id_card_requests \n            SET payment_status = 'pending' \n            WHERE payment_status NOT IN ('pending', 'verified', 'flagged')\n        ");
 
         // ═══════════════════════════════════════════════════════════════
         // ENUM CONVERSION
         // ═══════════════════════════════════════════════════════════════
 
-        DB::statement("
-            ALTER TABLE transport_subscription_requests 
-            MODIFY COLUMN status ENUM('pending', 'approved', 'rejected', 'cancelled') 
-            DEFAULT 'pending' NOT NULL
-        ");
+        // Only run enum ALTER statements on drivers that support them (MySQL, MariaDB).
+        $driver = DB::connection()->getDriverName();
 
-        DB::statement("
-            ALTER TABLE transport_subscription_requests 
-            MODIFY COLUMN payment_status ENUM('pending', 'verified', 'flagged') 
-            DEFAULT 'pending' NOT NULL
-        ");
+        if ($driver !== 'sqlite') {
+            DB::statement("\n                ALTER TABLE transport_subscription_requests \n                MODIFY COLUMN status ENUM('pending', 'approved', 'rejected', 'cancelled') \n                DEFAULT 'pending' NOT NULL\n            ");
 
-        DB::statement("
-            ALTER TABLE transport_subscriptions 
-            MODIFY COLUMN status ENUM('active', 'waitlisted', 'expired', 'cancelled') 
-            DEFAULT 'active' NOT NULL
-        ");
+            DB::statement("\n                ALTER TABLE transport_subscription_requests \n                MODIFY COLUMN payment_status ENUM('pending', 'verified', 'flagged') \n                DEFAULT 'pending' NOT NULL\n            ");
 
-        DB::statement("
-            ALTER TABLE id_card_requests 
-            MODIFY COLUMN status ENUM('pending', 'approved', 'rejected', 'ready_for_pickup', 'delivered', 'cancelled') 
-            DEFAULT 'pending' NOT NULL
-        ");
+            DB::statement("\n                ALTER TABLE transport_subscriptions \n                MODIFY COLUMN status ENUM('active', 'waitlisted', 'expired', 'cancelled') \n                DEFAULT 'active' NOT NULL\n            ");
 
-        DB::statement("
-            ALTER TABLE id_card_requests 
-            MODIFY COLUMN payment_status ENUM('pending', 'verified', 'flagged') 
-            DEFAULT 'pending' NOT NULL
-        ");
+            DB::statement("\n                ALTER TABLE id_card_requests \n                MODIFY COLUMN status ENUM('pending', 'approved', 'rejected', 'ready_for_pickup', 'delivered', 'cancelled') \n                DEFAULT 'pending' NOT NULL\n            ");
+
+            DB::statement("\n                ALTER TABLE id_card_requests \n                MODIFY COLUMN payment_status ENUM('pending', 'verified', 'flagged') \n                DEFAULT 'pending' NOT NULL\n            ");
+        }
     }
 
     /**
@@ -88,29 +53,18 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("
-            ALTER TABLE transport_subscription_requests 
-            MODIFY COLUMN status VARCHAR(20) DEFAULT 'pending'
-        ");
+        $driver = DB::connection()->getDriverName();
 
-        DB::statement("
-            ALTER TABLE transport_subscription_requests 
-            MODIFY COLUMN payment_status VARCHAR(20) DEFAULT 'pending'
-        ");
+        if ($driver !== 'sqlite') {
+            DB::statement("\n                ALTER TABLE transport_subscription_requests \n                MODIFY COLUMN status VARCHAR(20) DEFAULT 'pending'\n            ");
 
-        DB::statement("
-            ALTER TABLE transport_subscriptions 
-            MODIFY COLUMN status VARCHAR(20) DEFAULT 'active'
-        ");
+            DB::statement("\n                ALTER TABLE transport_subscription_requests \n                MODIFY COLUMN payment_status VARCHAR(20) DEFAULT 'pending'\n            ");
 
-        DB::statement("
-            ALTER TABLE id_card_requests 
-            MODIFY COLUMN status VARCHAR(30) DEFAULT 'pending'
-        ");
+            DB::statement("\n                ALTER TABLE transport_subscriptions \n                MODIFY COLUMN status VARCHAR(20) DEFAULT 'active'\n            ");
 
-        DB::statement("
-            ALTER TABLE id_card_requests 
-            MODIFY COLUMN payment_status VARCHAR(20) DEFAULT 'pending'
-        ");
+            DB::statement("\n                ALTER TABLE id_card_requests \n                MODIFY COLUMN status VARCHAR(30) DEFAULT 'pending'\n            ");
+
+            DB::statement("\n                ALTER TABLE id_card_requests \n                MODIFY COLUMN payment_status VARCHAR(20) DEFAULT 'pending'\n            ");
+        }
     }
 };
