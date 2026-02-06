@@ -5,110 +5,78 @@ namespace App\Policies;
 use App\Models\IdCardRequest;
 use App\Models\User;
 
+/**
+ * Policy for IdCardRequest with status gating.
+ */
 class IdCardRequestPolicy
+{
+    /**
+     * Statuses that allow soft deletion.
+     */
+    private const DELETABLE_STATUSES = ['pending', 'rejected', 'cancelled'];
+
+    /**
+     * Determine if the user can view any models.
+     */
+    public function viewAny(User $user): bool
     {
-        /**
-         * Determine whether the user can view any requests.
-         * Admins can view all; students can view their own.
-         */
-        public function viewAny(User $user): bool
-        {
-            return $user->hasRole('admin') || $user->hasRole('student');
-        }
+        return $user->hasRole('student') || $user->can('idcard.requests.view');
+    }
 
-        /**
-         * Determine whether the user can view the request.
-         */
-        public function view(User $user, IdCardRequest $request): bool
-        {
-            // Admins can view any request
-            if ($user->hasRole('admin')) {
-                return true;
-            }
+    /**
+     * Determine if the user can view the model.
+     */
+    public function view(User $user, IdCardRequest $idCardRequest): bool
+    {
+        return $user->id === $idCardRequest->user_id || $user->can('idcard.requests.view');
+    }
 
-            // Students can only view their own requests
-            return $user->id === $request->user_id;
-        }
+    /**
+     * Determine if the user can create models.
+     */
+    public function create(User $user): bool
+    {
+        return $user->hasRole('student');
+    }
 
-        /**
-         * Determine whether the user can create requests.
-         */
-        public function create(User $user): bool
-        {
-            return $user->hasRole('student');
-        }
-
-        /**
-         * Determine whether the user can update the request.
-         * Only admins can update (workflow actions).
-         */
-        public function update(User $user, IdCardRequest $request): bool
-        {
-            return $user->hasRole('admin');
-        }
-
-        /**
-         * Determine whether the user can delete the request.
-         * Generally not allowed.
-         */
-        public function delete(User $user, IdCardRequest $request): bool
-        {
+    /**
+     * Determine if the request can be soft deleted.
+     */
+    public function delete(User $user, IdCardRequest $idCardRequest): bool
+    {
+        if (!$user->can('idcard.requests.delete')) {
             return false;
         }
 
-        /**
-         * Determine whether the user can verify payment.
-         */
-        public function verifyPayment(User $user, IdCardRequest $request): bool
-        {
-            return $user->hasRole('admin') && $request->canVerifyPayment();
-        }
+        // Get status value (handle enum cast)
+        $status = $idCardRequest->status instanceof \BackedEnum 
+            ? $idCardRequest->status->value 
+            : $idCardRequest->status;
 
-        /**
-         * Determine whether the user can flag payment.
-         */
-        public function flagPayment(User $user, IdCardRequest $request): bool
-        {
-            return $user->hasRole('admin') && $request->canFlagPayment();
-        }
-
-        /**
-         * Determine whether the user can approve the request.
-         */
-        public function approve(User $user, IdCardRequest $request): bool
-        {
-            return $user->hasRole('admin') && $request->canBeApproved();
-        }
-
-        /**
-         * Determine whether the user can reject the request.
-         */
-        public function reject(User $user, IdCardRequest $request): bool
-        {
-            return $user->hasRole('admin') && $request->canBeRejected();
-        }
-
-        /**
-         * Determine whether the user can mark as ready for pickup.
-         */
-        public function ready(User $user, IdCardRequest $request): bool
-        {
-            return $user->hasRole('admin') && $request->canBeReadied();
-        }
-
-        /**
-         * Determine whether the user can mark as delivered.
-         */
-        public function deliver(User $user, IdCardRequest $request): bool
-        {
-            return $user->hasRole('admin') && $request->canBeDelivered();
-        }
-
-        /**
-         * Determine whether the user can view attachments.
-         */
-        public function viewAttachments(User $user, IdCardRequest $request): bool
-        {
-            return $user->hasRole('admin');
-        }
+        return in_array($status, self::DELETABLE_STATUSES);
     }
+
+    /**
+     * Determine if the request can be restored.
+     */
+    public function restore(User $user, IdCardRequest $idCardRequest): bool
+    {
+        if (!$user->can('idcard.requests.delete')) {
+            return false;
+        }
+
+        return $idCardRequest->trashed();
+    }
+
+    /**
+     * Determine if the request can be permanently deleted.
+     */
+    public function forceDelete(User $user, IdCardRequest $idCardRequest): bool
+    {
+        if (!$user->can('system.data.purge')) {
+            return false;
+        }
+
+        return $idCardRequest->trashed();
+    }
+}

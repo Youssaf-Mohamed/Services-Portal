@@ -29,7 +29,7 @@ class IdCardRequestController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = IdCardRequest::with(['user', 'type']);
+        $query = IdCardRequest::with(['user', 'type', 'reviewer']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -477,6 +477,127 @@ class IdCardRequestController extends Controller
         ];
 
         return ApiResponse::success($stats);
+    }
+    /**
+     * List soft-deleted requests.
+     */
+    public function trashed(Request $request)
+    {
+        $requests = IdCardRequest::onlyTrashed()
+            ->with(['user', 'type'])
+            ->latest('deleted_at')
+            ->paginate(20);
+
+        return ApiResponse::success([
+            'requests' => IdCardRequestResource::collection($requests),
+            'pagination' => [
+                'current_page' => $requests->currentPage(),
+                'last_page' => $requests->lastPage(),
+                'per_page' => $requests->perPage(),
+                'total' => $requests->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Cancel a request (status change only, no deletion).
+     */
+    public function cancel($id)
+    {
+        $idCardRequest = IdCardRequest::findOrFail($id);
+
+        // Cannot cancel approved/delivered requests
+        if (in_array($idCardRequest->status, [RequestStatus::APPROVED, RequestStatus::DELIVERED])) {
+            return ApiResponse::error('Cannot cancel an approved or delivered request.', null, 403);
+        }
+
+        $idCardRequest->update(['status' => 'cancelled']);
+
+        \App\Services\AuditLogger::logToDb('request_cancelled', $idCardRequest, auth()->user());
+
+        $this->notificationService->notifyIdCardRequestCancelled($idCardRequest->user, $idCardRequest->id);
+
+        return ApiResponse::success(new IdCardRequestResource($idCardRequest), 'Request cancelled successfully');
+    }
+
+    /**
+     * Soft delete a request.
+     */
+    public function destroy($id)
+    {
+        $idCardRequest = IdCardRequest::findOrFail($id);
+
+        // Authorization check
+        // $this->authorize('delete', $idCardRequest);
+
+        DB::transaction(function () use ($idCardRequest) {
+            $idCardRequest->delete();
+            \App\Services\AuditLogger::logToDb('request_deleted', $idCardRequest, auth()->user());
+        });
+
+        // Best-effort file cleanup (outside transaction)
+        $this->cleanupFiles($idCardRequest);
+
+        // Notify user
+        // $this->notificationService->notifyRequestDeleted($idCardRequest->user);
+
+        return ApiResponse::success(null, 'Request deleted successfully');
+    }
+
+    /**
+     * Restore a soft-deleted request.
+     */
+    public function restore($id)
+    {
+        $idCardRequest = IdCardRequest::onlyTrashed()->findOrFail($id);
+
+        // Authorization
+        // $this->authorize('restore', $idCardRequest);
+
+        $idCardRequest->restore();
+
+        \App\Services\AuditLogger::logToDb('request_restored', $idCardRequest, auth()->user());
+
+        return ApiResponse::success(new IdCardRequestResource($idCardRequest), 'Request restored successfully');
+    }
+
+    /**
+     * Permanently delete a soft-deleted request.
+     */
+    public function forceDestroy($id)
+    {
+        $idCardRequest = IdCardRequest::onlyTrashed()->findOrFail($id);
+
+        // Authorization
+        // $this->authorize('forceDelete', $idCardRequest);
+
+        // Cleanup files first
+        $this->cleanupFiles($idCardRequest);
+
+        $idCardRequest->forceDelete();
+
+        \App\Services\AuditLogger::logToDb('request_force_deleted', $idCardRequest, auth()->user());
+
+        return ApiResponse::success(null, 'Request permanently deleted');
+    }
+
+    /**
+     * Best-effort file cleanup.
+     */
+    private function cleanupFiles($idCardRequest): void
+    {
+        try {
+            if ($idCardRequest->transfer_screenshot_path) {
+                IdCardStorage::delete($idCardRequest->transfer_screenshot_path);
+            }
+            if ($idCardRequest->new_photo_path) {
+                IdCardStorage::delete($idCardRequest->new_photo_path);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Failed to delete ID card files: {$idCardRequest->id}", [
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }
 

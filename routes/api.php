@@ -21,6 +21,10 @@ use App\Http\Controllers\Api\IdCard\StudentIdCardController;
 use App\Http\Controllers\Api\IdCard\StudentIdCardRequestController;
 use App\Http\Controllers\Api\Admin\IdCard\IdCardRequestController;
 use App\Http\Controllers\Api\Admin\IdCard\IdCardSettingController;
+use App\Http\Controllers\Api\Admin\RoleController;
+use App\Http\Controllers\Api\Admin\PermissionController;
+use App\Http\Controllers\Api\Admin\UserRoleController;
+use App\Http\Controllers\Api\Admin\RolePermissionController;
 use App\Support\ApiResponse;
 
 // Health check endpoint (no auth required)
@@ -53,6 +57,26 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/mark-all-read', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
     });
 
+    // RBAC Management Routes (permission-based access)
+    Route::middleware('permission:system.admin.access')->prefix('admin')->group(function () {
+        
+        // Roles Management - Temporarily without specific permission check
+        Route::apiResource('roles', RoleController::class);
+        Route::put('roles/{role}/permissions/sync', [RolePermissionController::class, 'syncPermissions']);
+        Route::post('roles/{role}/permissions', [RolePermissionController::class, 'addPermissions']);
+        Route::delete('roles/{role}/permissions', [RolePermissionController::class, 'removePermissions']);
+
+        // Permissions Management - Temporarily without specific permission check
+        Route::apiResource('permissions', PermissionController::class);
+
+        // User Management - Temporarily without specific permission check
+        Route::get('users', [UserRoleController::class, 'index']);
+        Route::get('users/{user}/permissions', [UserRoleController::class, 'getUserPermissions']);
+        Route::post('users/{user}/roles', [UserRoleController::class, 'assignRole']);
+        Route::post('users/{user}/permissions/sync', [UserRoleController::class, 'syncPermissions']);
+        Route::delete('users/{user}/roles/{role}', [UserRoleController::class, 'removeRole']);
+    });
+
     // Admin routes
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('/ping', [AdminController::class, 'ping']);
@@ -79,14 +103,30 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Requests management
             Route::get('/requests', [TransportRequestController::class, 'index']);
+            
+            // Static routes MUST come before dynamic {id} routes
+            Route::get('/requests/trashed', [TransportRequestController::class, 'trashed'])
+                ->middleware('permission:transport.requests.delete');
+            Route::post('/requests/bulk-approve', [TransportRequestController::class, 'bulkApprove']);
+            Route::post('/requests/bulk-reject', [TransportRequestController::class, 'bulkReject']);
+            
+            // Dynamic {id} routes
             Route::get('/requests/{id}', [TransportRequestController::class, 'show']);
             Route::post('/requests/{id}/verify-payment', [TransportRequestController::class, 'verifyPayment']);
             Route::post('/requests/{id}/flag-payment', [TransportRequestController::class, 'flagPayment']);
             Route::post('/requests/{id}/approve', [TransportRequestController::class, 'approve']);
             Route::post('/requests/{id}/reject', [TransportRequestController::class, 'reject']);
-            Route::post('/requests/bulk-approve', [TransportRequestController::class, 'bulkApprove']);
-            Route::post('/requests/bulk-reject', [TransportRequestController::class, 'bulkReject']);
             Route::get('/requests/{id}/proof', [TransportRequestController::class, 'downloadProof']);
+            Route::patch('/requests/{id}/cancel', [TransportRequestController::class, 'cancel'])
+                ->middleware('permission:transport.requests.manage');
+            Route::delete('/requests/{id}', [TransportRequestController::class, 'destroy'])
+                ->middleware('permission:transport.requests.delete');
+            Route::post('/requests/{id}/restore', [TransportRequestController::class, 'restore'])
+                ->middleware('permission:transport.requests.delete');
+            Route::delete('/requests/{id}/force', [TransportRequestController::class, 'forceDestroy'])
+                ->middleware('permission:system.data.purge');
+
+
 
             // Routes CRUD
             Route::get('/routes', [RouteController::class, 'index']);
@@ -116,6 +156,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Requests management
             Route::get('/requests', [IdCardRequestController::class, 'index']);
+            Route::get('/requests/trashed', [IdCardRequestController::class, 'trashed']); // New: Trashed list
             Route::get('/requests/{id}', [IdCardRequestController::class, 'show']);
             Route::get('/requests/{id}/attachments/{kind}', [IdCardRequestController::class, 'attachment']);
             Route::post('/requests/{id}/verify-payment', [IdCardRequestController::class, 'verifyPayment']);
@@ -124,6 +165,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/requests/{id}/reject', [IdCardRequestController::class, 'reject']);
             Route::post('/requests/{id}/ready', [IdCardRequestController::class, 'ready']);
             Route::post('/requests/{id}/deliver', [IdCardRequestController::class, 'deliver']);
+            
+            // New: Cancellation & Deletion
+            Route::patch('/requests/{id}/cancel', [IdCardRequestController::class, 'cancel']);
+            Route::delete('/requests/{id}', [IdCardRequestController::class, 'destroy']);
+            Route::post('/requests/{id}/restore', [IdCardRequestController::class, 'restore']);
+            Route::delete('/requests/{id}/force', [IdCardRequestController::class, 'forceDestroy']);
 
             // Settings
             Route::get('/settings', [IdCardSettingController::class, 'show']);
@@ -156,6 +203,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Subscription request submission (with rate limiting)
         Route::middleware('throttle:uploads')->post('/subscription-requests', [StudentTransportRequestController::class, 'store']);
         Route::post('/subscription-requests/{id}', [StudentTransportRequestController::class, 'update']); // Update/Resubmit
+        Route::get('/subscription-requests/{id}/proof', [StudentTransportRequestController::class, 'downloadProof']);
 
         // Student status endpoints
         Route::get('/my-requests', [StudentTransportStatusController::class, 'myRequests']);
@@ -172,10 +220,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Request submission (with rate limiting)
         Route::middleware('throttle:uploads')->post('/requests', [StudentIdCardRequestController::class, 'store']);
         Route::post('/requests/{id}', [StudentIdCardRequestController::class, 'update']); // Update/Resubmit
+        Route::get('/requests/{id}/attachments/{kind}', [StudentIdCardRequestController::class, 'downloadAttachment']);
 
         // My requests
         Route::get('/my-requests', [StudentIdCardRequestController::class, 'index']);
         Route::get('/my-requests/{id}', [StudentIdCardRequestController::class, 'show']);
     });
 });
+
 

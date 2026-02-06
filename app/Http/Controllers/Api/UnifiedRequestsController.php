@@ -53,12 +53,14 @@ class UnifiedRequestsController extends Controller
             'pending' => 'Pending Review',
             'approved' => 'Approved',
             'rejected' => 'Rejected',
+            'cancelled' => 'Cancelled',
         ];
 
         $statusColors = [
             'pending' => 'warning',
             'approved' => 'success',
             'rejected' => 'danger',
+            'cancelled' => 'danger',
         ];
 
         return [

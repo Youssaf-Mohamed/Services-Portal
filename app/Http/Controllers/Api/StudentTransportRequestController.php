@@ -17,6 +17,7 @@ use App\Support\ApiResponse;
 use App\Support\ProofStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class StudentTransportRequestController extends Controller
 {
@@ -228,9 +229,12 @@ class StudentTransportRequestController extends Controller
             return ApiResponse::error('Request not found', null, 404);
         }
         
-        // Only allow updating if status is REJECTED
-        if ($subscriptionRequest->status !== RequestStatus::REJECTED->value) {
-            return ApiResponse::error('Only rejected requests can be resubmitted.', null, 422);
+        // Allow updating if status is REJECTED or payment_status is FLAGGED
+        $canUpdate = $subscriptionRequest->status === RequestStatus::REJECTED->value || 
+                     $subscriptionRequest->payment_status === 'flagged';
+
+        if (!$canUpdate) {
+            return ApiResponse::error('Only rejected requests or requests with flagged payments can be resubmitted.', null, 422);
         }
         
         // Load dependencies
@@ -338,6 +342,8 @@ class StudentTransportRequestController extends Controller
                 'pricing' => $pricingSnapshot,
                 'computed_at' => now()->toIso8601String(),
             ],
+            'payment_status' => 'pending', // Reset payment status
+            'payment_flag_reason' => null, // Clear flag reason
             'rejection_reason' => null, // Clear rejection reason
             'approved_by' => null,
             'approved_at' => null,
@@ -355,5 +361,21 @@ class StudentTransportRequestController extends Controller
             new StudentSubscriptionRequestResource($subscriptionRequest),
             'Request resubmitted successfully'
         );
+    }
+    /**
+     * Download the proof of payment.
+     */
+    public function downloadProof($id)
+    {
+        $user = auth()->user();
+        $request = TransportSubscriptionRequest::where('user_id', $user->id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        if (!$request->proof_path || !Storage::disk(config('transport.proof_disk', 'proofs'))->exists($request->proof_path)) {
+            abort(404, 'Proof file not found.');
+        }
+
+        return Storage::disk(config('transport.proof_disk', 'proofs'))->download($request->proof_path, 'payment_proof_' . $request->id . '.' . pathinfo($request->proof_path, PATHINFO_EXTENSION));
     }
 }

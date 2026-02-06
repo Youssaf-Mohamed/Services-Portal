@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class StudentIdCardRequestController extends Controller
 {
@@ -238,5 +239,27 @@ class StudentIdCardRequestController extends Controller
                 500
             );
         }
+    }
+    /**
+     * Download attachment (transfer screenshot or new photo).
+     */
+    public function downloadAttachment($id, $kind)
+    {
+        $user = auth()->user();
+        $request = IdCardRequest::where('user_id', $user->id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $path = match ($kind) {
+            'proof', 'transfer_screenshot' => $request->transfer_screenshot_path,
+            'photo', 'new_photo' => $request->new_photo_path,
+            default => null,
+        };
+
+        if (!$path || !Storage::disk('proofs')->exists($path)) {
+            abort(404, 'File not found.');
+        }
+
+        return Storage::disk('proofs')->download($path, $kind . '_' . $request->id . '.' . pathinfo($path, PATHINFO_EXTENSION));
     }
 }

@@ -36,6 +36,15 @@ class IdCardRequestResource extends JsonResource
             'payment_status_label' => $this->payment_status->label(),
             'payment_status_color' => $this->payment_status->color(),
             'created_at' => $this->created_at->toIso8601String(),
+            'approval_info' => $this->status->value === 'approved' ? [
+                'by' => $this->reviewer?->name ?? 'System',
+                'at' => $this->reviewed_at?->toIso8601String(),
+            ] : null,
+            'rejection_info' => $this->status->value === 'rejected' ? [
+                'by' => $this->reviewer?->name ?? 'System',
+                'at' => $this->reviewed_at?->toIso8601String(),
+                'reason' => $this->rejection_reason,
+            ] : null,
         ];
     }
 }

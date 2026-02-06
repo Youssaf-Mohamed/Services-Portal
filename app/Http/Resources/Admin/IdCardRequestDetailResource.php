@@ -20,6 +20,7 @@ class IdCardRequestDetailResource extends JsonResource
                 'id' => $this->user->id,
                 'name' => $this->user->name,
                 'email' => $this->user->email,
+                'student_id' => $this->user->academic_id ?? null,
             ],
             
             // Type info

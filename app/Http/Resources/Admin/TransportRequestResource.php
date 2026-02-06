@@ -47,6 +47,15 @@ class TransportRequestResource extends JsonResource
             'pricing_summary' => $pricingSummary,
             'amount_expected' => (float) $this->amount_expected,
             'has_proof' => !empty($this->proof_path),
+            'approval_info' => $this->status === 'approved' ? [
+                'by' => $this->approver?->name ?? 'System',
+                'at' => $this->approved_at?->toIso8601String(),
+            ] : null,
+            'rejection_info' => $this->status === 'rejected' ? [
+                'by' => $this->approver?->name ?? 'System',
+                'at' => $this->approved_at?->toIso8601String(), // Using approved_at as per controller logic
+                'reason' => $this->rejection_reason,
+            ] : null,
         ];
     }
 }

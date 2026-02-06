@@ -112,4 +112,19 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Emails
+    |--------------------------------------------------------------------------
+    |
+    | List of email addresses that should automatically receive admin role
+    | upon SSO login. Specify as comma-separated values in ADMIN_EMAILS env.
+    | Example: ADMIN_EMAILS=admin@university.edu,supervisor@university.edu
+    |
+    */
+
+    'admin_emails' => env('ADMIN_EMAILS', '') !== ''
+        ? explode(',', env('ADMIN_EMAILS'))
+        : [],
+
 ];

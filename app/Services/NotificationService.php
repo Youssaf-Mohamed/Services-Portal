@@ -104,6 +104,44 @@ class NotificationService
     }
 
     /**
+     * Sends a notification to the student informing them of request cancellation.
+     */
+    public function notifyRequestCancelled(User $student, int $requestId): Notification
+    {
+        return $this->notify(
+            $student,
+            'request_cancelled',
+            'Request Cancelled',
+            'Your transport subscription request has been cancelled.',
+            "/student/transport/my-requests"
+        );
+    }
+
+    /**
+     * Sends a notification to the student informing them of ID card request cancellation.
+     */
+    public function notifyIdCardRequestCancelled(User $student, int $requestId): Notification
+    {
+        return $this->notify(
+            $student,
+            'id_card_request_cancelled',
+            'ID Card Request Cancelled',
+            'Your ID card request has been cancelled.',
+            "/student/id-card/my-requests"
+        );
+    }
+    public function notifyRequestDeleted(User $student): Notification
+    {
+        return $this->notify(
+            $student,
+            'request_deleted',
+            'Request Deleted',
+            'Your transport subscription request has been removed by an administrator.',
+            "/student/transport/my-requests"
+        );
+    }
+
+    /**
      * Alerts the student that their subscription is expiring soon.
      */
     public function notifySubscriptionExpiring(User $student, int $daysRemaining): Notification

@@ -20,6 +20,12 @@ class StudentSubscriptionRequestResource extends JsonResource
                 'id' => $this->route->id,
                 'name_ar' => $this->route->name_ar,
                 'name_en' => $this->route->name_en,
+                'name_en' => $this->route->name_en,
+                'pricing' => [
+                    'price_one_way' => (float) $this->route->price_one_way,
+                    'monthly_discount_percent' => (float) $this->route->monthly_discount_percent,
+                    'term_discount_percent' => (float) $this->route->term_discount_percent,
+                ],
             ],
             'slot' => $this->slot ? [
                 'day_of_week' => $this->slot->day_of_week,
@@ -44,7 +50,7 @@ class StudentSubscriptionRequestResource extends JsonResource
             ]),
             'payment_status' => $this->payment_status,
             'payment_flag_reason' => $this->payment_flag_reason,
-            'proof_url' => $this->proof_path ? url("api/admin/transport/requests/{$this->id}/proof") : null,
+            'proof_url' => $this->proof_path ? url("api/transport/subscription-requests/{$this->id}/proof") : null,
             'plan_id' => $this->plan_id,
             'payment_method_id' => $this->payment_method_id,
             'paid_from_number' => $this->paid_from_number,

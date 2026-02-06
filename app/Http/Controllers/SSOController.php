@@ -61,15 +61,41 @@ class SSOController extends Controller
                     return \App\Support\ApiResponse::error('Email not found in provider data');
                 }
 
-                // Find or create the user
-                $user = User::firstOrCreate(
-                    ['email' => $email],
-                    [
+                // Find or create the user (handle soft-deleted users for SSO compatibility)
+                $user = User::withTrashed()->where('email', $email)->first();
+
+                if ($user) {
+                    // Restore if soft deleted
+                    if ($user->trashed()) {
+                        $user->restore();
+                        \App\Services\AuditLogger::logRoleAssignment($user->id, [], 'user_restored_via_sso');
+                    }
+                    // Update user data from SSO
+                    $user->update([
+                        'name' => $name,
+                        'password' => $user->password ?: Hash::make(Str::random(24)),
+                        'email_verified_at' => $user->email_verified_at ?: now(),
+                        'avatar_url' => $avatar,
+                        'academic_id' => $academic_id,
+                        'national_id' => $national_id,
+                        'program_name' => $program_name,
+                        'level_name' => $level_name,
+                    ]);
+                } else {
+                    // Create new user
+                    $user = User::create([
+                        'email' => $email,
                         'name' => $name,
                         'password' => Hash::make(Str::random(24)),
                         'email_verified_at' => now(),
-                    ]
-                );
+                        'avatar_url' => $avatar,
+                        'academic_id' => $academic_id,
+                        'national_id' => $national_id,
+                        'program_name' => $program_name,
+                        'level_name' => $level_name,
+                    ]);
+                }
+
 
                 // Update details if changed (Sync always for now to be safe)
                 $user->update([
@@ -81,10 +107,21 @@ class SSOController extends Controller
                     'level_name' => $level_name,
                 ]);
 
-                // Ensure the user has the 'student' role
-                if (method_exists($user, 'hasRole') && !$user->hasRole('student')) {
-                    $user->assignRole('student');
+            // Enhanced role assignment logic
+            // Ensure all users have at least one role
+            if (!$user->roles()->exists()) {
+                $user->assignRole('student'); // Default role for all new users
+                \App\Services\AuditLogger::logRoleAssignment($user->id, ['student'], 'auto_assigned');
+            }
+
+            // Auto-assign admin role to configured emails
+            $adminEmails = config('auth.admin_emails', []);
+            if (!empty($adminEmails) && in_array($email, $adminEmails)) {
+                if (!$user->hasRole('admin')) {
+                    $user->assignRole('admin');
+                    \App\Services\AuditLogger::logRoleAssignment($user->id, ['admin'], 'auto_assigned');
                 }
+            }
 
                 // SECURITY: Regenerate session after authentication (prevent session fixation)
                 session()->regenerate();

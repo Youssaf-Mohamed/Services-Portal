@@ -6,9 +6,12 @@ use App\Enums\IdCard\PaymentStatus;
 use App\Enums\IdCard\RequestStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class IdCardRequest extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'user_id',
         'type_id',

@@ -146,4 +146,79 @@ class AuditLogger
             'timestamp' => now()->toIso8601String()
         ]);
     }
+
+    /**
+     * Log role management action
+     */
+    public static function logRoleChange(string $action, $role, array $context = []): void
+    {
+        Log::channel('audit')->info('Role management action', [
+            'event' => 'role.' . $action,
+            'user_id' => Auth::id(),
+            'role_id' => $role->id ?? null,
+            'role_name' => $role->name ?? $context['name'] ?? null,
+            'context' => $context,
+            'ip' => request()->ip(),
+            'timestamp' => now()->toIso8601String()
+        ]);
+    }
+
+    /**
+     * Log permission management action
+     */
+    public static function logPermissionChange(string $action, $permission, array $context = []): void
+    {
+        Log::channel('audit')->info('Permission management action', [
+            'event' => 'permission.' . $action,
+            'user_id' => Auth::id(),
+            'permission_id' => $permission->id ?? null,
+            'permission_name' => $permission->name ?? $context['name'] ?? null,
+            'context' => $context,
+            'ip' => request()->ip(),
+            'timestamp' => now()->toIso8601String()
+        ]);
+    }
+
+    /**
+     * Log user role assignment changes
+     */
+    public static function logRoleAssignment(int $userId, array $roles, string $action = 'assigned'): void
+    {
+        Log::channel('audit')->warning('User roles changed', [
+            'event' => 'user.roles.' . $action,
+            'actor_id' => Auth::id(),
+            'target_user_id' => $userId,
+            'roles' => $roles,
+            'ip' => request()->ip(),
+            'timestamp' => now()->toIso8601String()
+        ]);
+    }
+
+    /**
+     * Log action to both database and file.
+     * Use for critical actions: delete, restore, force-delete, role changes.
+     */
+    public static function logToDb(string $action, $model = null, $user = null, array $extra = []): void
+    {
+        // Database logging
+        \App\Models\AuditLog::create([
+            'user_id' => $user?->id ?? Auth::id(),
+            'action' => $action,
+            'model_type' => $model ? get_class($model) : null,
+            'model_id' => $model?->id ?? null,
+            'old_values' => $extra['old'] ?? null,
+            'new_values' => $extra['new'] ?? null,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+
+        // File logging (for debugging)
+        Log::channel('audit')->info($action, [
+            'model' => $model ? get_class($model) . '#' . ($model->id ?? 'null') : null,
+            'user' => $user?->email ?? Auth::user()?->email,
+            'ip' => request()->ip(),
+            'extra' => $extra,
+        ]);
+    }
 }
+

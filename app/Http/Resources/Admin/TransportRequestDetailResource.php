@@ -39,7 +39,7 @@ class TransportRequestDetailResource extends JsonResource
                 'id' => $this->user->id,
                 'name' => $this->user->name,
                 'email' => $this->user->email,
-                'student_id' => $this->user->student_id ?? null,
+                'student_id' => $this->user->academic_id ?? null,
             ],
             
             // Route info
@@ -82,6 +82,11 @@ class TransportRequestDetailResource extends JsonResource
             'payment_status' => $this->payment_status ?? 'pending_verification',
             'payment_flag_reason' => $this->payment_flag_reason,
             'payment_verified_at' => $this->payment_verified_at?->toIso8601String(),
+            'payment_verifier' => $this->paymentVerifier ? [
+                'id' => $this->paymentVerifier->id,
+                'name' => $this->paymentVerifier->name,
+                'email' => $this->paymentVerifier->email,
+            ] : null,
             
             // Rejection
             'rejection_reason' => $this->rejection_reason,

@@ -21,7 +21,7 @@ class StudentTransportStatusController extends Controller
         $requests = TransportSubscriptionRequest::where('user_id', $request->user()->id)
             ->with([
                 'route' => function ($query) {
-                    $query->select('id', 'name_ar', 'name_en');
+                    $query->select('id', 'name_ar', 'name_en', 'price_one_way', 'monthly_discount_percent', 'term_discount_percent');
                 },
                 'slot' => function ($query) {
                     $query->select('id', 'day_of_week', 'time', 'direction');

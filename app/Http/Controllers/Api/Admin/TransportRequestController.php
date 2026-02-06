@@ -31,7 +31,7 @@ class TransportRequestController extends Controller
      */
     public function index(Request $request)
     {
-        $query = TransportSubscriptionRequest::with(['user', 'route', 'slot']);
+        $query = TransportSubscriptionRequest::with(['user', 'route', 'slot', 'approver']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -96,7 +96,7 @@ class TransportRequestController extends Controller
     public function show($id)
     {
         $request = TransportSubscriptionRequest::with([
-            'user', 'route.stops', 'slot', 'paymentMethod', 'approver', 'subscription'
+            'user', 'route.stops', 'slot', 'paymentMethod', 'approver', 'subscription', 'paymentVerifier'
         ])->find($id);
 
         if (!$request) {
@@ -651,5 +651,125 @@ class TransportRequestController extends Controller
 
         return $days[$dayNumber] ?? 'Unknown';
     }
+
+    /**
+     * List soft-deleted requests.
+     */
+    public function trashed(Request $request)
+    {
+        $requests = TransportSubscriptionRequest::onlyTrashed()
+            ->with(['user:id,name,email', 'route:id,name_ar,name_en'])
+            ->latest('deleted_at')
+            ->paginate(20);
+
+        return ApiResponse::success([
+            'requests' => $requests->items(),
+            'pagination' => [
+                'current_page' => $requests->currentPage(),
+                'last_page' => $requests->lastPage(),
+                'per_page' => $requests->perPage(),
+                'total' => $requests->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Cancel a request (status change only, no deletion).
+     */
+    public function cancel($id)
+    {
+        $subscriptionRequest = TransportSubscriptionRequest::findOrFail($id);
+
+        // Cannot cancel approved requests (subscription exists)
+        if ($subscriptionRequest->status === 'approved') {
+            return ApiResponse::error('Cannot cancel an approved request. Cancel the subscription first.', null, 403);
+        }
+
+        $subscriptionRequest->update(['status' => 'cancelled']);
+
+        \App\Services\AuditLogger::logToDb('request_cancelled', $subscriptionRequest, auth()->user());
+
+        $this->notificationService->notifyRequestCancelled($subscriptionRequest->user, $subscriptionRequest->id);
+
+        return ApiResponse::success($subscriptionRequest, 'Request cancelled successfully');
+    }
+
+    /**
+     * Soft delete a request.
+     */
+    public function destroy($id)
+    {
+        $subscriptionRequest = TransportSubscriptionRequest::findOrFail($id);
+
+        // Policy check (status gating)
+        $this->authorize('delete', $subscriptionRequest);
+
+        DB::transaction(function () use ($subscriptionRequest) {
+            $subscriptionRequest->delete();
+            \App\Services\AuditLogger::logToDb('request_deleted', $subscriptionRequest, auth()->user());
+        });
+
+        // Best-effort file cleanup (outside transaction)
+        $this->cleanupFiles($subscriptionRequest);
+
+        // Notify user
+        $this->notificationService->notifyRequestDeleted($subscriptionRequest->user);
+
+        return ApiResponse::success(null, 'Request deleted successfully');
+    }
+
+    /**
+     * Restore a soft-deleted request.
+     */
+    public function restore($id)
+    {
+        $subscriptionRequest = TransportSubscriptionRequest::onlyTrashed()->findOrFail($id);
+
+        // Policy check
+        $this->authorize('restore', $subscriptionRequest);
+
+        $subscriptionRequest->restore();
+
+        \App\Services\AuditLogger::logToDb('request_restored', $subscriptionRequest, auth()->user());
+
+        return ApiResponse::success($subscriptionRequest, 'Request restored successfully');
+    }
+
+    /**
+     * Permanently delete a soft-deleted request.
+     */
+    public function forceDestroy($id)
+    {
+        $subscriptionRequest = TransportSubscriptionRequest::onlyTrashed()->findOrFail($id);
+
+        // Policy check
+        $this->authorize('forceDelete', $subscriptionRequest);
+
+        // Cleanup files first
+        $this->cleanupFiles($subscriptionRequest);
+
+        $subscriptionRequest->forceDelete();
+
+        \App\Services\AuditLogger::logToDb('request_force_deleted', $subscriptionRequest, auth()->user());
+
+        return ApiResponse::success(null, 'Request permanently deleted');
+    }
+
+    /**
+     * Best-effort file cleanup - does not fail on errors.
+     */
+    private function cleanupFiles($subscriptionRequest): void
+    {
+        try {
+            if ($subscriptionRequest->proof_path) {
+                Storage::disk('proofs')->delete($subscriptionRequest->proof_path);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Failed to delete proof file: {$subscriptionRequest->proof_path}", [
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }
+
 

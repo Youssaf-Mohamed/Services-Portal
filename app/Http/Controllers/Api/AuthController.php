@@ -81,6 +81,14 @@ class AuthController extends Controller
             'program_name' => $user->program_name,
             'level_name' => $user->level_name,
             'role' => $user->getRoleNames()->first() ?? null,
+            // Enhanced RBAC fields
+            'is_admin' => $user->hasRole('admin'),
+            'roles' => $user->roles->pluck('name')->values()->all(),
+            'permissions' => $user->getAllPermissions()
+                ->pluck('name')
+                ->unique()
+                ->values()
+                ->all()
         ]);
     }
 }
