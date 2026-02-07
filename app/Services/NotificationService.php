@@ -280,4 +280,22 @@ class NotificationService
             "/student/id-card/my-requests"
         );
     }
+    /**
+     * Sends a notification to all students about a new announcement.
+     */
+    public function notifyAnnouncement(\App\Models\Announcement $announcement): void
+    {
+        // Chunking to handle potential large number of students
+        User::role('student')->chunk(100, function ($students) use ($announcement) {
+            foreach ($students as $student) {
+                $this->notify(
+                    $student,
+                    'announcement',
+                    'New Announcement: ' . $announcement->title,
+                    \Illuminate\Support\Str::limit($announcement->content, 100),
+                    '/student/announcements'
+                );
+            }
+        });
+    }
 }

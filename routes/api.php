@@ -42,6 +42,11 @@ Route::post('/sso/secret-login', [\App\Http\Controllers\Admin\SecretLoginControl
 // SECURITY: SSO verification with rate limiting
 Route::middleware('throttle:sso')->get('/sso/verify', [\App\Http\Controllers\SSOController::class, 'verify']);
 
+// External Integrations (LMS)
+Route::middleware(['lms.auth', 'throttle:60,1'])->prefix('external/lms')->group(function () {
+    Route::get('/notifications/count', [\App\Http\Controllers\Api\External\LmsIntegrationController::class, 'getNotificationCount']);
+});
+
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('auth')->group(function () {

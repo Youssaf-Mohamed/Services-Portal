@@ -11,12 +11,12 @@ use App\Http\Controllers\Controller;
 
 class AnnouncementController extends Controller
 {
-    // protected $notificationService;
+    protected $notificationService;
 
-    // public function __construct(NotificationService $notificationService)
-    // {
-    //     $this->notificationService = $notificationService;
-    // }
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
 
     public function index()
     {
@@ -26,6 +26,9 @@ class AnnouncementController extends Controller
 
     public function store(Request $request)
     {
+        // Debug logging
+        \Illuminate\Support\Facades\Log::info('Announcement Store Request:', $request->all());
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -36,9 +39,13 @@ class AnnouncementController extends Controller
         ]);
 
         $announcement = Announcement::create($validated);
+        
+        \Illuminate\Support\Facades\Log::info('Announcement Created:', ['id' => $announcement->id, 'is_active' => $announcement->is_active]);
+        \Illuminate\Support\Facades\Log::info('Send Notification Flag:', ['flag' => $request->send_notification, 'active' => $announcement->is_active]);
 
-        if ($request->send_notification) {
-            // Notification logic here (placeholder)
+        if ($request->send_notification && $announcement->is_active) {
+            \Illuminate\Support\Facades\Log::info('Triggering Notification Service...');
+            $this->notificationService->notifyAnnouncement($announcement);
         }
 
         return ApiResponse::success($announcement, 'Announcement created successfully', 201);
